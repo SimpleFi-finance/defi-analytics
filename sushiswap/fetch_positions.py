@@ -15,7 +15,6 @@ query = gql(
     query ($lastID: ID) {
       positions(first: 1000, where: {id_gt: $lastID, closed: true}) {
         id
-        closed
         history {
             id
             transaction {
@@ -23,7 +22,6 @@ query = gql(
                 inputTokenAmounts
                 outputTokenAmount
                 transactionType
-                transferredTo
             }
         }
       }
@@ -32,7 +30,7 @@ query = gql(
 )
 
 lastID = ""
-all_positions = []
+all_positions = {}
 
 print("------ READING POSITIONS ---------")
 
@@ -42,39 +40,52 @@ while True:
     if not response['positions']:
         break
 
-    all_positions += response['positions']
+    for position in response['positions']:
+        all_positions[position['id']] = []
+        for positionSnapshot in position['history']:
+            tx = positionSnapshot['transaction']
+            tx_data = []
+            tx_data.append(tx['id'])
+            tx_data.append(tx['inputTokenAmounts'])
+            tx_data.append(tx['outputTokenAmount'])
+            tx_data.append(tx['transactionType'])
+            all_positions[position['id']].append(tx_data)
+       
     lastID = response['positions'][-1]['id']
-    print(len(all_positions))
-
-
-
-merged_positions = []
-print(len(all_positions))
-
+    print("Processed : ", len(all_positions))
+ 
+print("Number of total positions: ", len(all_positions))
 
 print("------ MERGING POSITIONS ---------")
 
-for pos in all_positions:
-    if pos['history'][0]['transaction']['transactionType'] == "INVEST":
-        continue
-    
-    if pos['history'][-1]['transaction']['transactionType'] == "REDEEM":
-        merged_positions.append(pos)
+TX_TYPE = 3
+merged_positions = {}
+i = 0
+for position_id in all_positions.keys():
+    i += 1
+    if i%1000 == 0:
+        print(i)
+
+
+    first_tx = all_positions[position_id][0]
+    last_tx = all_positions[position_id][-1]
+
+    if first_tx[TX_TYPE] != "INVEST":
         continue
 
-    if pos['history'][-1]['transaction']['transactionType'] == "TRANSFER_OUT":
-        current_position_counter = int(pos['id'].split("-")[-1])
-        next_position_id = pos['id'][0:-1] + str(current_position_counter + 1)
+    if last_tx[TX_TYPE] == "REDEEM":
+        merged_positions[position_id] = all_positions[position_id]
+        continue
 
-        next_position = next((p for p in all_positions if p['id'] == next_position_id), None)
-        if next_position == None or next_position['closed'] == False:
+    if last_tx[TX_TYPE] == "TRANSFER_OUT":
+        current_position_counter = int(position_id.split("-")[-1])
+        next_position_id = position_id.rsplit('-', 1)[0] + "-" + str(current_position_counter + 1)
+
+        next_position = all_positions.get(next_position_id)
+        if next_position == None or next_position[-1][TX_TYPE] != "REDEEM":
             continue
 
-        pos['history'] += next_position['history']
-        merged_positions.append(pos)
-        continue
+        merged_positions[position_id] = all_positions[position_id]
+        merged_positions[position_id] =  merged_positions[position_id] + next_position
 
-print(len(merged_positions))
-
-
-
+print("Number of positions after merging histories: ", len(merged_positions))
