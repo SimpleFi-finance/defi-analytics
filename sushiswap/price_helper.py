@@ -39,16 +39,10 @@ class PriceProvider:
         """
 
         eth_price = self.getEthPriceinUSD(block)
-        print("eth_price = ", eth_price)
-
         if token == WETH:
             return eth_price
 
         weth_pair = self.getWethPairForToken(token)
-
-        print("weth_pair = ", weth_pair)
-        print("market = ", weth_pair['id'])
-
 
         if weth_pair is None:
             #TODO use some other pair
@@ -58,9 +52,6 @@ class PriceProvider:
         vars = {"block": block, "market": weth_pair['id']}
         response = self._client.execute(query, variable_values=vars)
 
-        print("response = ", response)
-
-
         if response['market'] is None:
             return 0
 
@@ -68,10 +59,6 @@ class PriceProvider:
         tokenA = reserves[0].split("|")[0]
         tokenA_reserve = int(reserves[0].split("|")[2])
         tokenB_reserve = int(reserves[1].split("|")[2])
-
-        print("tokenA = ", tokenA)
-        print("decimalsA = ", weth_pair['inputTokens'][1]['decimals'])
-        print("decimalsB = ", weth_pair['inputTokens'][0]['decimals'])
 
         if(tokenA == WETH):
             token_price_in_eth = (tokenA_reserve * pow(10, -18)) /(tokenB_reserve * (-1) * int(weth_pair['inputTokens'][0]['decimals']))
