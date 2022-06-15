@@ -13,12 +13,14 @@ client = Client(transport=transport, fetch_schema_from_transport=True)
 query = gql(
     """
     query ($lastID: ID) {
-      positions(first: 1000, where: {id_gt: $lastID, closed: true}) {
+      positions(first: 1000, where: {accountAddress: \"0x0291eb432cb4a2613a7415018933e3db45bcd769\", id_gt: $lastID, closed: true}) {
         id
+        accountAddress
         history {
             id
             transaction {
                 id
+                blockNumber
                 inputTokenAmounts
                 outputTokenAmount
                 transactionType
@@ -49,6 +51,7 @@ while True:
             tx_data.append(tx['inputTokenAmounts'])
             tx_data.append(tx['outputTokenAmount'])
             tx_data.append(tx['transactionType'])
+            tx_data.append(tx['blockNumber'])
             all_positions[position['id']].append(tx_data)
        
     lastID = response['positions'][-1]['id']
@@ -79,7 +82,6 @@ for position_id in all_positions.keys():
     # first TX has to be of type INVEST
     if first_tx[TX_TYPE] != "INVEST":
         skip += 1
-        print("Skipping ", position_id)
         continue
 
     # if last TX is REDEEM then position is completed
@@ -102,7 +104,6 @@ for position_id in all_positions.keys():
             # handle case when there's no next position
             if next_position == None:
                 non += 1
-                print("Non finished position: ", position_id)
                 break
 
             # if last TX is not REDEEM then loop again to pick up and merge next position
@@ -127,4 +128,37 @@ for position_id in all_positions.keys():
 
 print("Number of positions after merging histories: ", len(merged_positions))
 print("Non: ", non)
-print("Skip: ", skip)
+print("Skip: ", skip, "\n")
+
+print("------ EXTRACT TOKENS AND TOKEN AMOUNTS ---------")
+for pos_id in merged_positions.keys():
+    txs = merged_positions[pos_id]
+
+    first_tx = txs[0]
+    last_tx = txs[-1]
+
+    tokenA = first_tx[1][0].split("|")[0]
+    tokenA_amount_start = first_tx[1][0].split("|")[2]
+    tokenA_amount_end = last_tx[1][0].split("|")[2]
+
+    tokenB = first_tx[1][1].split("|")[0]
+    tokenB_amount_start = first_tx[1][1].split("|")[2]
+    tokenB_amount_end = last_tx[1][1].split("|")[2]
+
+    position_start_block = first_tx[4]
+    position_end_block = last_tx[4]
+
+    print("Position: ", pos_id)
+
+    print("TokenA = ", tokenA)
+    print("TokenA start = ", tokenA_amount_start)
+    print("TokenA end = ", tokenA_amount_end)
+
+    print("TokenB = ", tokenB)
+    print("TokenB start = ", tokenB_amount_start)
+    print("TokenB end = ", tokenB_amount_end)
+
+    print("Position start block = ", position_start_block)
+    print("Position end block = ", position_end_block)
+
+    print("\n")
