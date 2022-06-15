@@ -1,0 +1,7 @@
+query ($market: ID!, $block: Int!) {
+  market(id: $market, block: { number: $block }) {
+    id
+    inputTokenTotalBalances
+    blockNumber
+  }
+}
