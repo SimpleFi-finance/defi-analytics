@@ -5,12 +5,16 @@ SUSHISWAP_ENDPOINT = "https://api.thegraph.com/subgraphs/name/simplefi-finance/s
 USDC_ETH_PAIR = "0x397ff1542f962076d0bfe58ea045ffa2d347aca0"
 WETH = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
 WETH_DECIMALS = 18
+USDC = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
 USDC_DECIMALS = 6
 
 class PriceProvider:
     def __init__(self):
         transport = AIOHTTPTransport(url=SUSHISWAP_ENDPOINT)
-        self._client = Client(transport=transport, fetch_schema_from_transport=True, execute_timeout=30)
+        self._client = Client(transport=transport, fetch_schema_from_transport=True, execute_timeout=120)
+        self._decimals = {}
+        self._decimals[WETH] = WETH_DECIMALS
+        self._decimals[USDC] = USDC_DECIMALS
 
     def getEthPriceinUSD(self, block):
         """Calculate ETH price in USD at a given block.
@@ -60,16 +64,16 @@ class PriceProvider:
         reserves = response['market']['inputTokenTotalBalances']
         tokenA = reserves[0].split("|")[0]
         tokenA_reserve = int(reserves[0].split("|")[2])
-        tokenA_decimals = int(weth_pair['inputTokens'][0]['decimals'])
+
+        tokenB = reserves[1].split("|")[0]
         tokenB_reserve = int(reserves[1].split("|")[2])
-        tokenB_decimals = int(weth_pair['inputTokens'][1]['decimals'])
 
         if(tokenA == WETH):
-            token_price_in_eth = (tokenA_reserve * pow(10, (-1) * WETH_DECIMALS)) /(tokenB_reserve * pow(10, (-1) * tokenB_decimals))
+            token_price_in_eth = (tokenA_reserve * pow(10, (-1) * self.decimals(WETH))) /(tokenB_reserve * pow(10, (-1) * self.decimals(tokenB)))
             token_price_in_usd = token_price_in_eth * eth_price
             return token_price_in_usd
         else:
-            token_price_in_eth = (tokenB_reserve * pow(10, (-1) * WETH_DECIMALS)) / (tokenA_reserve * pow(10, (-1) * tokenA_decimals))
+            token_price_in_eth = (tokenB_reserve * pow(10, (-1) * self.decimals(WETH))) / (tokenA_reserve * pow(10, (-1) * self.decimals(tokenA)))
             token_price_in_usd = token_price_in_eth * eth_price
             return token_price_in_usd
 
@@ -79,10 +83,29 @@ class PriceProvider:
         vars = {"token": token}
         response = self._client.execute(query, variable_values=vars)
 
-        if response['markets'] == None:
+        if response['markets'] == None or len(response['markets']) == 0:
             return None
 
         return response['markets'][0]
+
+
+    def decimals(self, token_address):
+        """Get number of decimals for token.
+        Query subgraph if info is not stored locally.
+        """
+
+        num_of_decimals = self._decimals.get(token_address)
+        if num_of_decimals != None:
+            return num_of_decimals
+
+        query = self._load_query('get_token_decimals.graphql')
+        vars = {"id": token_address}
+        response = self._client.execute(query, variable_values=vars)
+
+        num_of_decimals = response['token']['decimals']
+        self._decimals[token_address] = num_of_decimals
+
+        return num_of_decimals
 
 
     def _load_query(self, path):

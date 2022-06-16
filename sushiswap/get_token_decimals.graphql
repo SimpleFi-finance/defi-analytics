@@ -1,0 +1,7 @@
+query ($id: ID!) {
+  token(id: $id) {
+    name
+    symbol
+    decimals
+  }
+}
