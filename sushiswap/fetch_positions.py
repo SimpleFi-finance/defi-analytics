@@ -184,7 +184,7 @@ for pos_id in merged_positions.keys():
 
     print("tokenB: {0}".format(tokenB))
     print("tokenB amount: {0:.2f}".format(tokenB_amount_start))
-    print("tokenB price: {0:.2f}".format(tokenB_price_start))
+    print("tokenB price: ${0:.2f}".format(tokenB_price_start))
     print("Position value: ${0:.2f}\n".format(position_start_value))
 
 
@@ -199,9 +199,19 @@ for pos_id in merged_positions.keys():
     pool_net_gain = position_end_value - position_start_value
     hodl_net_gain = position_end_value_if_held - position_start_value
 
-    print("HODL position value : ${0:.2f}".format(position_end_value_if_held))
-    print("Net gain investing in pool : ${0:.2f}".format(pool_net_gain))
-    print("Net gain if HODLed : ${0:.2f}".format(hodl_net_gain))
+    pool_roi = pool_net_gain / position_start_value
+    hodl_roi = hodl_net_gain / position_start_value
+    pool_vs_hodl_roi = (position_end_value - position_end_value_if_held) / position_end_value
+
+    print("Net gain investing in pool: ${0:.2f}".format(pool_net_gain))
+    print("HODL position value: ${0:.2f}".format(position_end_value_if_held))
+    print("Net gain if HODLed: ${0:.2f}".format(hodl_net_gain))
+    print("ROI achieved by investing in pool: {0:.2f}%".format(pool_roi * 100))
+    print("ROI achieved if HODLed: {0:.2f}%".format(hodl_roi * 100))
+    print("Pool vs HODL performance: {0:.2f}%".format(pool_vs_hodl_roi * 100))
+
+
+
 
 
     print('#######')
