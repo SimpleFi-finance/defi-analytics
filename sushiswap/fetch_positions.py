@@ -47,13 +47,7 @@ while True:
         all_positions[position['id']] = []
         for positionSnapshot in position['history']:
             tx = positionSnapshot['transaction']
-            tx_data = []
-            tx_data.append(tx['id'])
-            tx_data.append(tx['inputTokenAmounts'])
-            tx_data.append(tx['outputTokenAmount'])
-            tx_data.append(tx['transactionType'])
-            tx_data.append(tx['blockNumber'])
-            all_positions[position['id']].append(tx_data)
+            all_positions[position['id']].append(tx)
        
     lastID = response['positions'][-1]['id']
     print("Processed : ", len(all_positions))
@@ -62,7 +56,7 @@ print("Number of total positions: ", len(all_positions))
 
 print("------ MERGING POSITIONS ---------")
 
-TX_TYPE = 3
+TX_TYPE = 'transactionType'
 merged_positions = {}
 processed_positions = {}
 i = 0
@@ -148,27 +142,27 @@ for pos_id in merged_positions.keys():
     first_tx = txs[0]
     last_tx = txs[-1]
 
-    position_start_block = int(first_tx[4])
-    position_end_block = int(last_tx[4])
+    position_start_block = int(first_tx['blockNumber'])
+    position_end_block = int(last_tx['blockNumber'])
 
-    tokenA = first_tx[1][0].split("|")[0]
-    tokenA_amount_start = int(first_tx[1][0].split("|")[2]) * pow(10, (-1) * price_provider.decimals(tokenA))
+    tokenA = first_tx['inputTokenAmounts'][0].split("|")[0]
+    tokenA_amount_start = int(first_tx['inputTokenAmounts'][0].split("|")[2]) * pow(10, (-1) * price_provider.decimals(tokenA))
     tokenA_price_start = price_provider.getTokenPriceinUSD(tokenA, position_start_block)
     if(tokenA_price_start == None):
         continue
 
-    tokenA_amount_end = int(last_tx[1][0].split("|")[2]) * pow(10, (-1) * price_provider.decimals(tokenA))
+    tokenA_amount_end = int(last_tx['inputTokenAmounts'][0].split("|")[2]) * pow(10, (-1) * price_provider.decimals(tokenA))
     tokenA_price_end = price_provider.getTokenPriceinUSD(tokenA, position_end_block)
     if(tokenA_price_end == None):
         continue
 
-    tokenB = first_tx[1][1].split("|")[0]
-    tokenB_amount_start = int(first_tx[1][1].split("|")[2]) * pow(10, (-1) * price_provider.decimals(tokenB))
+    tokenB = first_tx['inputTokenAmounts'][1].split("|")[0]
+    tokenB_amount_start = int(first_tx['inputTokenAmounts'][1].split("|")[2]) * pow(10, (-1) * price_provider.decimals(tokenB))
     tokenB_price_start = price_provider.getTokenPriceinUSD(tokenB, position_start_block)
     if(tokenB_price_start == None):
         continue
 
-    tokenB_amount_end = int(last_tx[1][1].split("|")[2]) * pow(10, (-1) * price_provider.decimals(tokenB))
+    tokenB_amount_end = int(last_tx['inputTokenAmounts'][1].split("|")[2]) * pow(10, (-1) * price_provider.decimals(tokenB))
     tokenB_price_end = price_provider.getTokenPriceinUSD(tokenB, position_end_block)
     if(tokenB_price_end == None):
         continue
@@ -193,7 +187,7 @@ for pos_id in merged_positions.keys():
     print("tokenA price: ${0:.2f}".format(tokenA_price_end))
 
     print("tokenB amount: {0:.2f}".format(tokenB_amount_end))
-    print("tokenB price: {0:.2f}".format(tokenB_price_end))
+    print("tokenB price: ${0:.2f}".format(tokenB_price_end))
     print("Position value: ${0:.2f}\n".format(position_end_value))
 
     pool_net_gain = position_end_value - position_start_value
@@ -209,28 +203,5 @@ for pos_id in merged_positions.keys():
     print("ROI achieved by investing in pool: {0:.2f}%".format(pool_roi * 100))
     print("ROI achieved if HODLed: {0:.2f}%".format(hodl_roi * 100))
     print("Pool vs HODL performance: {0:.2f}%".format(pool_vs_hodl_roi * 100))
-
-
-
-
-
     print('#######')
-
-
-
-    # print("Position: ", pos_id)
-
-    # print("TokenA = ", tokenA)
-    # print("TokenA start = ", tokenA_amount_start)
-    # print("TokenA end = ", tokenA_amount_end)
-
-    # print("TokenB = ", tokenB)
-    # print("TokenB start = ", tokenB_amount_start)
-    # print("TokenB end = ", tokenB_amount_end)
-
-    # print("Position start block = ", position_start_block)
-    # print("Position end block = ", position_end_block)
-
-    # print("\n")
-
 
