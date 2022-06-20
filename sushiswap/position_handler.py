@@ -194,6 +194,9 @@ class PositionHandler:
                 'pool_vs_hodl_roi': pool_vs_hodl_roi
             }
 
+            if(len(position_stats.keys()) % 10 == 0):
+                print(len(position_stats.keys()))
+
         return position_stats
 
     

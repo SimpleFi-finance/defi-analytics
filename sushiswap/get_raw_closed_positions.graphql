@@ -1,12 +1,7 @@
 query ($lastID: ID) {
   positions(
     first: 1000
-    where: {
-      accountAddress: "0x0291eb432cb4a2613a7415018933e3db45bcd769"
-      market: "0xc3d03e4f041fd4cd388c549ee2a29a9e5075882f"
-      id_gt: $lastID
-      closed: true
-    }
+    where: { market: "0xc3d03e4f041fd4cd388c549ee2a29a9e5075882f", id_gt: $lastID, closed: true }
   ) {
     id
     accountAddress
