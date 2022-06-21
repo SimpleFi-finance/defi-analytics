@@ -4,6 +4,7 @@ from position_handler import PositionHandler
 SUSHISWAP_ENDPOINT = "https://api.thegraph.com/subgraphs/name/simplefi-finance/sushiswap"
 DAI_WETH_POOL = "0xc3d03e4f041fd4cd388c549ee2a29a9e5075882f"
 LDO_WETH_POOL = "0xc558f600b34a5f69dd2f0d06cb8a88d829b7420a"
+AAVE_WETH_POOL = "0xd75ea151a61d06868e31f8988d28dfe5e9df57b4"
 
 def analyze_pool(pool, filename):
     position_handler = PositionHandler(SUSHISWAP_ENDPOINT)
@@ -30,6 +31,9 @@ def analyze_dai_weth_pool():
 def analyze_ldo_weth_pool():
     analyze_pool(LDO_WETH_POOL, "stats/ldo-weth.csv")
 
+def analyze_aave_weth_pool():
+    analyze_pool(AAVE_WETH_POOL, "stats/aave-weth.csv")
+
 def profitability_ratio(filename):
     profitable = 0
     non_profitable = 0
@@ -49,16 +53,21 @@ def profitability_ratio(filename):
             else:
                 net_gain_non_profitable += 1
 
-        print(profitable, non_profitable)
-        print(net_gain_profitable, net_gain_non_profitable)
+        net_percentage = net_gain_profitable/(net_gain_profitable+net_gain_non_profitable)
+        print("Net gain profitable: {} positions ({:.2f}%)".format(net_gain_profitable, round(net_percentage * 100, 2)))
 
+        pool_vs_hodl_profitable_ratio = profitable / (profitable+non_profitable)
+        print("Profitable compared to HODL strategy: {} positions ({:.2f}%)".format(profitable, round(pool_vs_hodl_profitable_ratio * 100, 2)))
 
 
 def main():
     #analyze_dai_weth_pool()
     #analyze_ldo_weth_pool()
-    profitability_ratio("stats/dai-eth.csv")
-    profitability_ratio("stats/ldo-weth.csv")
+    # analyze_aave_weth_pool()
+    # profitability_ratio("stats/dai-eth.csv")
+    # profitability_ratio("stats/ldo-weth.csv")
+    profitability_ratio("stats/aave-weth.csv")
+
 
 
 
