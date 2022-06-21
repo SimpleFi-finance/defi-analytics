@@ -1,8 +1,5 @@
-query ($lastID: ID) {
-  positions(
-    first: 1000
-    where: { market: "0xc3d03e4f041fd4cd388c549ee2a29a9e5075882f", id_gt: $lastID, closed: true }
-  ) {
+query ($lastID: ID, $market: String!) {
+  positions(first: 1000, where: { market: $market, id_gt: $lastID, closed: true }) {
     id
     accountAddress
     history {

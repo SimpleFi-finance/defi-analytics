@@ -11,7 +11,7 @@ class PositionHandler:
         self._client = Client(transport=transport, fetch_schema_from_transport=True, execute_timeout=120)
 
 
-    def getRawClosedPositions(self):
+    def getRawClosedPositions(self, market):
         """Fetch closed positions from the Sushiswap subgraph.
         Return a dictionary where key is position ID and value list of TXs.
         """
@@ -20,7 +20,7 @@ class PositionHandler:
         lastID = ""
 
         while True:
-            vars = {"lastID": lastID}
+            vars = {"lastID": lastID, "market": market}
             query = self._load_query('get_raw_closed_positions.graphql')
             response = self._client.execute(query, variable_values=vars)
             if not response['positions']:
