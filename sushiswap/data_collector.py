@@ -6,7 +6,7 @@ DAI_WETH_POOL = "0xc3d03e4f041fd4cd388c549ee2a29a9e5075882f"
 LDO_WETH_POOL = "0xc558f600b34a5f69dd2f0d06cb8a88d829b7420a"
 AAVE_WETH_POOL = "0xd75ea151a61d06868e31f8988d28dfe5e9df57b4"
 USDC_WETH_POOL = "0x397ff1542f962076d0bfe58ea045ffa2d347aca0"
-
+WBTC_WETH_POOL = "0xceff51756c56ceffca006cd410b03ffc46dd3a58"
 
 def collect_data_for_pool(pool, filename):
     position_handler = PositionHandler(SUSHISWAP_ENDPOINT)
@@ -39,6 +39,9 @@ def collect_data_for_aave_weth():
 def collect_data_for_usdc_weth():
     collect_data_for_pool(USDC_WETH_POOL, "stats/usdc-weth.csv")
 
+def collect_data_for_wbtc_weth():
+    collect_data_for_pool(WBTC_WETH_POOL, "stats/wbtc-weth.csv")
+
 def profitability_ratio(filename):
     profitable = 0
     non_profitable = 0
@@ -70,10 +73,12 @@ def main():
     # collect_data_for_ldo_weth()
     # collect_data_for_aave_weth()
     # collect_data_for_usdc_weth()
+    # collect_data_for_wbtc_weth()
     # profitability_ratio("stats/dai-eth.csv")
     # profitability_ratio("stats/ldo-weth.csv")
     # profitability_ratio("stats/aave-weth.csv")
-    profitability_ratio("stats/usdc-weth.csv")
+    # profitability_ratio("stats/usdc-weth.csv")
+    profitability_ratio("stats/wbtc-weth.csv")
 
 if __name__ == "__main__":
     main()
