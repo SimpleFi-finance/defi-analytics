@@ -21,7 +21,7 @@ class PositionHandler:
 
         while True:
             vars = {"lastID": lastID, "market": market}
-            query = self._load_query('get_raw_closed_positions.graphql')
+            query = self._load_query('queries/get_raw_closed_positions.graphql')
             response = self._client.execute(query, variable_values=vars)
             if not response['positions']:
                 break

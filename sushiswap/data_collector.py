@@ -67,13 +67,13 @@ def profitability_ratio(filename):
 
 def main():
     # collect_data_for_dai_weth()
-    collect_data_for_ldo_weth()
+    # collect_data_for_ldo_weth()
     # collect_data_for_aave_weth()
     # collect_data_for_usdc_weth()
     # profitability_ratio("stats/dai-eth.csv")
     # profitability_ratio("stats/ldo-weth.csv")
     # profitability_ratio("stats/aave-weth.csv")
-    # profitability_ratio("stats/usdc-weth.csv")
+    profitability_ratio("stats/usdc-weth.csv")
 
 if __name__ == "__main__":
     main()

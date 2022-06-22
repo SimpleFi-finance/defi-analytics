@@ -23,7 +23,7 @@ class PriceProvider:
         Sushiswap subgraph is used to fetch WETH-USDC pool reserves.
         """
 
-        query = self._load_query('pair_reserves.graphql')
+        query = self._load_query('queries/pair_reserves.graphql')
         vars = {"block": block, "market": USDC_ETH_PAIR}
         response = self._client.execute(query, variable_values=vars)
 
@@ -56,7 +56,7 @@ class PriceProvider:
             #TODO use some other pair
             return None
 
-        query = self._load_query('pair_reserves.graphql')
+        query = self._load_query('queries/pair_reserves.graphql')
         vars = {"block": block, "market": weth_pair['id']}
         response = self._client.execute(query, variable_values=vars)
 
@@ -89,7 +89,7 @@ class PriceProvider:
         if weth_pair != None:
             return weth_pair
 
-        query = self._load_query('get_eth_pair_for_token.graphql')
+        query = self._load_query('queries/get_eth_pair_for_token.graphql')
         vars = {"token": token}
         response = self._client.execute(query, variable_values=vars)
 
@@ -111,7 +111,7 @@ class PriceProvider:
         if num_of_decimals != None:
             return num_of_decimals
 
-        query = self._load_query('get_token_decimals.graphql')
+        query = self._load_query('queries/get_token_decimals.graphql')
         vars = {"id": token_address}
         response = self._client.execute(query, variable_values=vars)
 
