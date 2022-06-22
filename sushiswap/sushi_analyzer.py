@@ -8,7 +8,7 @@ AAVE_WETH_POOL = "0xd75ea151a61d06868e31f8988d28dfe5e9df57b4"
 USDC_WETH_POOL = "0x397ff1542f962076d0bfe58ea045ffa2d347aca0"
 
 
-def analyze_pool(pool, filename):
+def collect_data_for_pool(pool, filename):
     position_handler = PositionHandler(SUSHISWAP_ENDPOINT)
 
     raw_positions = position_handler.getRawClosedPositions(pool)
@@ -27,17 +27,17 @@ def analyze_pool(pool, filename):
     position_handler.writeProfitabilityStatsToCsv(profitability_stats, filename)
     print("Stats written to {0}".format(filename))
 
-def analyze_dai_weth_pool():
-    analyze_pool(DAI_WETH_POOL, "stats/dai-eth.csv")
+def collect_data_for_dai_weth():
+    collect_data_for_pool(DAI_WETH_POOL, "stats/dai-eth.csv")
 
-def analyze_ldo_weth_pool():
-    analyze_pool(LDO_WETH_POOL, "stats/ldo-weth.csv")
+def collect_data_for_ldo_weth():
+    collect_data_for_pool(LDO_WETH_POOL, "stats/ldo-weth.csv")
 
-def analyze_aave_weth_pool():
-    analyze_pool(AAVE_WETH_POOL, "stats/aave-weth.csv")
+def collect_data_for_aave_weth():
+    collect_data_for_pool(AAVE_WETH_POOL, "stats/aave-weth.csv")
 
-def analyze_usdc_weth_pool():
-    analyze_pool(USDC_WETH_POOL, "stats/usdc-weth.csv")
+def collect_data_for_usdc_weth():
+    collect_data_for_pool(USDC_WETH_POOL, "stats/usdc-weth.csv")
 
 def profitability_ratio(filename):
     profitable = 0
@@ -66,14 +66,14 @@ def profitability_ratio(filename):
 
 
 def main():
-    #analyze_dai_weth_pool()
-    #analyze_ldo_weth_pool()
-    # analyze_aave_weth_pool()
-    # analyze_usdc_weth_pool()
+    # collect_data_for_dai_weth()
+    collect_data_for_ldo_weth()
+    # collect_data_for_aave_weth()
+    # collect_data_for_usdc_weth()
     # profitability_ratio("stats/dai-eth.csv")
     # profitability_ratio("stats/ldo-weth.csv")
     # profitability_ratio("stats/aave-weth.csv")
-    profitability_ratio("stats/usdc-weth.csv")
+    # profitability_ratio("stats/usdc-weth.csv")
 
 if __name__ == "__main__":
     main()
