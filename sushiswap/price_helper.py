@@ -15,6 +15,8 @@ class PriceProvider:
         self._decimals = {}
         self._decimals[WETH] = WETH_DECIMALS
         self._decimals[USDC] = USDC_DECIMALS
+        self._weth_pairs = {}
+        self._weth_pairs[USDC] = USDC_ETH_PAIR
 
     def getEthPriceinUSD(self, block):
         """Calculate ETH price in USD at a given block.
@@ -79,6 +81,14 @@ class PriceProvider:
 
 
     def getWethPairForToken(self, token):
+        """Find a WETH pair for token, if exists.
+        Returns None if there is no such pair.
+        """
+
+        weth_pair = self._weth_pairs.get(token)
+        if weth_pair != None:
+            return weth_pair
+
         query = self._load_query('get_eth_pair_for_token.graphql')
         vars = {"token": token}
         response = self._client.execute(query, variable_values=vars)
@@ -86,7 +96,10 @@ class PriceProvider:
         if response['markets'] == None or len(response['markets']) == 0:
             return None
 
-        return response['markets'][0]
+        weth_pair = response['markets'][0]
+        self._weth_pairs[token] = weth_pair
+
+        return weth_pair
 
 
     def decimals(self, token_address):
