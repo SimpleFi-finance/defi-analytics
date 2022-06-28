@@ -129,6 +129,13 @@ class PositionHandler:
         for pos_id in positions.keys():
             txs = positions[pos_id]
 
+            position_start_block = txs[0]['blockNumber']
+            position_end_block = txs[-1]['blockNumber']
+
+            # don't handle one TX position opening/closing
+            if position_start_block == position_end_block:
+                continue
+
             tokenA = txs[0]['inputTokenAmounts'][0].split("|")[0]
             tokenB = txs[0]['inputTokenAmounts'][1].split("|")[0]
 
@@ -167,13 +174,13 @@ class PositionHandler:
                 tokenA_amount = int(tx['inputTokenAmounts'][0].split("|")[2]) * pow(10, (-1) * price_provider.decimals(tokenA))
                 tokenA_price = price_provider.getTokenPriceinUSD(tokenA, block)
                 if(tokenA_price == None):
-                    continue
+                    continue           
                 position_redemption_value += tokenA_amount * tokenA_price
 
                 tokenB_amount = int(tx['inputTokenAmounts'][1].split("|")[2]) * pow(10, (-1) * price_provider.decimals(tokenB))
                 tokenB_price = price_provider.getTokenPriceinUSD(tokenB, block)
                 if(tokenB_price == None):
-                    continue
+                    continue            
                 position_redemption_value += tokenB_amount * tokenB_price
 
 
@@ -188,8 +195,8 @@ class PositionHandler:
 
             position_stats[pos_id] = {
                 'account': pos_id.split("-")[0],
-                'position_start_block': txs[0]['blockNumber'],
-                'position_end_block': txs[-1]['blockNumber'],
+                'position_start_block': position_start_block,
+                'position_end_block': position_end_block,
                 'tokenA': tokenA,
                 'tokenB': tokenB,
                 'position_investment_value': position_investment_value,
