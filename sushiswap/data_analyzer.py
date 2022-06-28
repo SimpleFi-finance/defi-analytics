@@ -1,5 +1,7 @@
 #%%
 # Load position data
+import numpy as np
+from scipy import stats
 import pandas as pd
 df = pd.read_csv("stats/ldo-weth.csv")
 df.head(10)
@@ -23,7 +25,7 @@ ax = pool_vs_hodl_roi_profitability.plot(
     shadow=True,
     )
 ax.legend(loc='lower right')
-ax.set_title('AAVE-WETH position profitability', fontweight='bold', color= 'yellow');
+ax.set_title('LDO-WETH position profitability', fontweight='bold', color= 'yellow');
 ax
 
 # %%
@@ -48,7 +50,28 @@ agg_stats = df.groupby('time_ranges')['is_profitable'].agg(Total='count', Profit
 ax = agg_stats.plot(
     kind='bar',
 )
-ax.set_title('Number of closed positions in AAVE-WETH', fontweight='bold', color= 'yellow');
+ax.set_title('Number of closed positions in LDO-WETH', fontweight='bold', color= 'yellow');
 ax.tick_params(colors='yellow', which='both', rotation='auto')
 ax
+
+# %%
+# Describe returns
+def remove_roi_outliers(df):
+    mean = df['pool_vs_hodl_roi'].mean()
+    sd = df['pool_vs_hodl_roi'].std()
+
+    return df[(df['pool_vs_hodl_roi'] <= mean+(6 * sd))]
+
+
+filtered_df = remove_roi_outliers(df)
+
+pd.set_option('display.float_format', '{:.6f}'.format)
+filtered_df['pool_vs_hodl_roi'].max()
+filtered_df['pool_vs_hodl_roi'].min()
+filtered_df['pool_vs_hodl_roi'].idxmin()
+filtered_df['pool_vs_hodl_roi'].describe()
+filtered_df["pool_vs_hodl_roi"].plot(kind='hist', bins=100)
+
+
+
 # %%
