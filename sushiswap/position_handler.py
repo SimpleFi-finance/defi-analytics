@@ -191,7 +191,7 @@ class PositionHandler:
 
             pool_roi = pool_net_gain / position_investment_value
             hodl_roi = hodl_net_gain / position_investment_value
-            pool_vs_hodl_roi = (position_redemption_value - position_redemption_value_if_held) / position_redemption_value
+            pool_vs_hodl_roi = (position_redemption_value - position_redemption_value_if_held) / position_redemption_value_if_held
 
             position_stats[pos_id] = {
                 'account': pos_id.split("-")[0],
