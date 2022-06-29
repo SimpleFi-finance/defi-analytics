@@ -1,9 +1,7 @@
 #%%
 # Load position data
-import numpy as np
-from scipy import stats
 import pandas as pd
-df = pd.read_csv("stats/ldo-weth.csv")
+df = pd.read_csv("stats/usdc-weth.csv")
 df.head(10)
 
 # %%
@@ -56,22 +54,16 @@ ax
 
 # %%
 # Describe returns
-def remove_roi_outliers(df):
-    mean = df['pool_vs_hodl_roi'].mean()
-    sd = df['pool_vs_hodl_roi'].std()
+def remove_outliers(df, column_name):
+    q_low = df[column_name].quantile(0.01)
+    q_hi  = df[column_name].quantile(0.95)
+    return df[(df[column_name] < q_hi) & (df[column_name] > q_low)]
 
-    return df[(df['pool_vs_hodl_roi'] <= mean+(6 * sd))]
-
-
-filtered_df = remove_roi_outliers(df)
-
+filtered_df = remove_outliers(df, 'pool_roi')
 pd.set_option('display.float_format', '{:.6f}'.format)
-filtered_df['pool_vs_hodl_roi'].max()
-filtered_df['pool_vs_hodl_roi'].min()
-filtered_df['pool_vs_hodl_roi'].idxmin()
-filtered_df['pool_vs_hodl_roi'].describe()
-filtered_df["pool_vs_hodl_roi"].plot(kind='hist', bins=100)
+filtered_df["pool_roi"].describe()
 
-
+# filtered_df['pool_roi'].describe()
+filtered_df["pool_roi"].plot(kind='hist', bins=100)
 
 # %%
