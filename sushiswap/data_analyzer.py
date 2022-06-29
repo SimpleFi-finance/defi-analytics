@@ -2,10 +2,10 @@
 # Load position data
 import pandas as pd
 
-PAIR_NAME = "USDC-WETH"
-FILE_NAME = "usdc-weth.csv"
+PAIR_NAME = "LDO-WETH"
+FILE_NAME = "ldo-weth.csv"
 
-df = pd.read_csv("stats/" + FILE_NAME)
+df = pd.read_csv("stats/" + FILE_NAME, parse_dates=["position_end_date"])
 df.head(10)
 
 # %%

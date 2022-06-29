@@ -2,6 +2,7 @@ import csv
 from gql import gql, Client
 from gql.transport.aiohttp import AIOHTTPTransport
 from price_helper import PriceProvider
+from datetime import datetime
 
 class PositionHandler:
 
@@ -131,6 +132,8 @@ class PositionHandler:
 
             position_start_block = txs[0]['blockNumber']
             position_end_block = txs[-1]['blockNumber']
+            timestamp = int(txs[-1]['timestamp'])
+            position_end_date = datetime.strftime(datetime.fromtimestamp(timestamp), '%Y-%m-%d')
 
             # don't handle one TX position opening/closing
             if position_start_block == position_end_block:
@@ -197,6 +200,7 @@ class PositionHandler:
                 'account': pos_id.split("-")[0],
                 'position_start_block': position_start_block,
                 'position_end_block': position_end_block,
+                'position_end_date': position_end_date,
                 'tokenA': tokenA,
                 'tokenB': tokenB,
                 'position_investment_value': position_investment_value,
@@ -223,6 +227,7 @@ class PositionHandler:
                 'account',
                 'position_start_block',
                 'position_end_block',
+                'position_end_date',
                 'tokenA',
                 'tokenB',
                 'position_investment_value',
