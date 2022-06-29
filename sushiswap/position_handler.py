@@ -30,6 +30,8 @@ class PositionHandler:
                 raw_positions[position['id']] = []
                 for positionSnapshot in position['history']:
                     tx = positionSnapshot['transaction']
+                    tx["accountAddress"] = position["accountAddress"]
+                    tx["blockNumber"] = int(tx["blockNumber"])
                     raw_positions[position['id']].append(tx)
             
             lastID = response['positions'][-1]['id']
