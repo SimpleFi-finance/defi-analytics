@@ -74,3 +74,10 @@ ax.tick_params(colors='yellow', which='both', rotation='auto')
 ax
 
 # %%
+# Scatter plot the position pool ROIs
+ax = filtered_df.plot.scatter(x='position_end_date', y='pool_roi', s=10)
+ax.set_title('Position ROIs for ' + PAIR_NAME, fontweight='bold', color= 'yellow');
+ax.tick_params(colors='yellow', which='both', rotation='auto')
+ax.set_xticklabels(df['position_end_date'].dt.date, rotation=30, ha='right')
+ax
+# %%
