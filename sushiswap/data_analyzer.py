@@ -1,7 +1,11 @@
 #%%
 # Load position data
 import pandas as pd
-df = pd.read_csv("stats/usdc-weth.csv")
+
+PAIR_NAME = "USDC-WETH"
+FILE_NAME = "usdc-weth.csv"
+
+df = pd.read_csv("stats/" + FILE_NAME)
 df.head(10)
 
 # %%
@@ -23,7 +27,7 @@ ax = pool_vs_hodl_roi_profitability.plot(
     shadow=True,
     )
 ax.legend(loc='lower right')
-ax.set_title('LDO-WETH position profitability', fontweight='bold', color= 'yellow');
+ax.set_title(PAIR_NAME + ' position profitability', fontweight='bold', color= 'yellow');
 ax
 
 # %%
@@ -48,7 +52,7 @@ agg_stats = df.groupby('time_ranges')['is_profitable'].agg(Total='count', Profit
 ax = agg_stats.plot(
     kind='bar',
 )
-ax.set_title('Number of closed positions in LDO-WETH', fontweight='bold', color= 'yellow');
+ax.set_title('Number of closed positions in ' + PAIR_NAME, fontweight='bold', color= 'yellow');
 ax.tick_params(colors='yellow', which='both', rotation='auto')
 ax
 
@@ -64,6 +68,9 @@ pd.set_option('display.float_format', '{:.6f}'.format)
 filtered_df["pool_roi"].describe()
 
 # filtered_df['pool_roi'].describe()
-filtered_df["pool_roi"].plot(kind='hist', bins=100)
+ax = filtered_df["pool_roi"].plot(kind='hist', bins=100)
+ax.set_title('Distribution of returns for ' + PAIR_NAME, fontweight='bold', color= 'yellow');
+ax.tick_params(colors='yellow', which='both', rotation='auto')
+ax
 
 # %%
