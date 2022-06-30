@@ -11,7 +11,6 @@ class PositionHandler:
         transport = AIOHTTPTransport(url=endpoint)
         self._client = Client(transport=transport, fetch_schema_from_transport=True, execute_timeout=120)
 
-
     def getRawClosedPositions(self, market):
         """Fetch closed positions from the Sushiswap subgraph.
         Return a dictionary where key is position ID and value list of TXs.
@@ -32,12 +31,11 @@ class PositionHandler:
                 for positionSnapshot in position['history']:
                     tx = positionSnapshot['transaction']
                     raw_positions[position['id']].append(tx)
-            
+
             lastID = response['positions'][-1]['id']
             print("Processed positions:", len(raw_positions))
         
         return raw_positions
-
 
     def mergePositionsByHistory(self, raw_positions):
         """Merge positions which are part of same user history.
@@ -48,7 +46,9 @@ class PositionHandler:
         merged_positions = {}
         processed_positions = {}
 
-        for position_id in raw_positions.keys():
+        ordered_raw_positions = dict(sorted(raw_positions.items(), key=lambda item: (item[0].rsplit('-', 1)[0], int(item[0].split("-")[-1]))))
+
+        for position_id in ordered_raw_positions.keys():
             # don't process position which was already processed as part of position merging
             if processed_positions.get(position_id) == True:
                 continue
