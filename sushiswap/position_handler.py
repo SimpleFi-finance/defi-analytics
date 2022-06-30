@@ -3,6 +3,7 @@ from gql import gql, Client
 from gql.transport.aiohttp import AIOHTTPTransport
 from price_helper import PriceProvider
 from datetime import datetime
+import time
 
 class PositionHandler:
 
@@ -123,6 +124,7 @@ class PositionHandler:
         """Return dict of position profitability stats.
         For every position calculate net gains, ROI gains and pool vs HODL. difference.
         """
+        start_time = time.time()
 
         price_provider = PriceProvider()
         position_stats = {}
@@ -132,8 +134,10 @@ class PositionHandler:
 
             position_start_block = txs[0]['blockNumber']
             position_end_block = txs[-1]['blockNumber']
-            timestamp = int(txs[-1]['timestamp'])
-            position_end_date = datetime.strftime(datetime.fromtimestamp(timestamp), '%Y-%m-%d')
+            start_timestamp = int(txs[0]['timestamp'])
+            position_start_date = datetime.strftime(datetime.fromtimestamp(start_timestamp), '%Y-%m-%d')
+            end_timestamp = int(txs[-1]['timestamp'])
+            position_end_date = datetime.strftime(datetime.fromtimestamp(end_timestamp), '%Y-%m-%d')
 
             # don't handle one TX position opening/closing
             if position_start_block == position_end_block:
@@ -200,6 +204,7 @@ class PositionHandler:
                 'account': pos_id.split("-")[0],
                 'position_start_block': position_start_block,
                 'position_end_block': position_end_block,
+                'position_start_date': position_start_date,
                 'position_end_date': position_end_date,
                 'tokenA': tokenA,
                 'tokenB': tokenB,
@@ -216,6 +221,10 @@ class PositionHandler:
             if(len(position_stats.keys()) % 10 == 0):
                 print(len(position_stats.keys()))
 
+        end_time = time.time()
+
+        print("--- %s seconds ---" % (end_time - start_time))
+
         return position_stats
 
     
@@ -227,6 +236,7 @@ class PositionHandler:
                 'account',
                 'position_start_block',
                 'position_end_block',
+                'position_start_date',
                 'position_end_date',
                 'tokenA',
                 'tokenB',
