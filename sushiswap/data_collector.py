@@ -1,4 +1,5 @@
 import csv
+import pickle
 from position_handler import PositionHandler
 from graph_clients import SushiswapFarmsClient
 
@@ -45,6 +46,20 @@ def collect_data_for_pool(pool, filename):
     position_handler.writeProfitabilityStatsToCsv(profitability_stats, filename)
     print("Stats written to {0}".format(filename))
 
+def collect_data_for_farms(pool, positions):
+    farm_client = SushiswapFarmsClient()
+    market_id = farm_client.getMarketForLPToken(pool)
+    print("Farm ID for pool: {0} is : {1}".format(market_id, pool))
+
+    [farm_address, farm_id] = market_id.split("-")
+    print("Farm Contract address: {0} and farm id : {1}".format(farm_address, farm_id))
+
+    farm_transactions = farm_client.getTransactionsOfClosedPositions(market_id)
+    farm_transactions_for_positions = farm_client.getFarmTransactionsForPositions(farm_address, farm_transactions, positions)
+    farm_transactions_with_prices = farm_client.addRewardValueInUSD(farm_transactions_for_positions)
+
+    return farm_transactions_with_prices
+
 def collect_data_for_dai_weth():
     collect_data_for_pool(DAI_WETH_POOL, "stats/dai-eth.csv")
 
@@ -65,19 +80,6 @@ def collect_data_for_usdt_weth():
 
 def collect_data_for_yfi_weth():
     collect_data_for_pool(YFI_WETH_POOL, "stats/yfi-weth.csv")
-
-def collect_data_for_farms(pool, positions):
-    farm_client = SushiswapFarmsClient()
-    market_id = farm_client.getMarketForLPToken(pool)
-    print("Farm ID for pool: {0} is : {1}".format(market_id, pool))
-
-    [farm_address, farm_id] = market_id.split("-")
-    print("Farm Contract address: {0} and farm id : {1}".format(farm_address, farm_id))
-
-    farm_transactions = farm_client.getTransactionsOfClosedPositions(market_id)
-    farm_transactions_for_positions = farm_client.getFarmTransactionsForPositions(farm_address, farm_transactions, positions)
-
-    return farm_transactions_for_positions
 
 def profitability_ratio(filename):
     profitable = 0
@@ -103,7 +105,6 @@ def profitability_ratio(filename):
 
         pool_vs_hodl_profitable_ratio = profitable / (profitable+non_profitable)
         print("Profitable compared to HODL strategy: {} positions ({:.2f}%)".format(profitable, round(pool_vs_hodl_profitable_ratio * 100, 2)))
-
 
 def main():
     collect_data_for_dai_weth()

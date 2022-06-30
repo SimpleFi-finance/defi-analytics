@@ -37,7 +37,8 @@ class PositionHandler:
             lastID = response['positions'][-1]['id']
             print("Processed positions:", len(raw_positions))
         
-        return raw_positions
+        ordered_raw_positions = dict(sorted(raw_positions.items(), key=lambda item: (item[0].rsplit('-', 1)[0], int(item[0].split("-")[-1]))))
+        return ordered_raw_positions
 
 
     def mergePositionsByHistory(self, raw_positions):
