@@ -2,10 +2,10 @@
 # Load position data
 import pandas as pd
 
-PAIR_NAME = "LDO-WETH"
-FILE_NAME = "ldo-weth.csv"
+PAIR_NAME = "AAVE-WETH"
+FILE_NAME = "aave-weth.csv"
 
-df = pd.read_csv("stats/" + FILE_NAME, parse_dates=["position_end_date"])
+df = pd.read_csv("stats/" + FILE_NAME, parse_dates=["position_end_date", "position_start_date"])
 df.head(10)
 
 # %%
@@ -60,7 +60,7 @@ ax
 # Describe returns
 def remove_outliers(df, column_name):
     q_low = df[column_name].quantile(0.01)
-    q_hi  = df[column_name].quantile(0.95)
+    q_hi  = df[column_name].quantile(0.99)
     return df[(df[column_name] < q_hi) & (df[column_name] > q_low)]
 
 filtered_df = remove_outliers(df, 'pool_roi')
@@ -75,9 +75,20 @@ ax
 
 # %%
 # Scatter plot the position pool ROIs
-ax = filtered_df.plot.scatter(x='position_end_date', y='pool_roi', s=10)
-ax.set_title('Position ROIs for ' + PAIR_NAME, fontweight='bold', color= 'yellow');
+filtered_df.sort_values(by=['position_end_date'], inplace=True)
+ax = filtered_df.plot.scatter(x='position_end_date', y='pool_roi', s=5)
+ax.set_title('Scatter position closing dates ' + PAIR_NAME, fontweight='bold', color= 'yellow');
 ax.tick_params(colors='yellow', which='both', rotation='auto')
-ax.set_xticklabels(df['position_end_date'].dt.date, rotation=30, ha='right')
+labels = filtered_df['position_end_date'][::100]
+ax.set_xticklabels(labels.dt.date, rotation=30, ha='right')
+ax
+
+# %%
+filtered_df.sort_values(by=['position_start_date'], inplace=True)
+ax = filtered_df.plot.scatter(x='position_start_date', y='pool_roi', s=5)
+ax.set_title('Scatter position opening dates ' + PAIR_NAME, fontweight='bold', color= 'yellow');
+ax.tick_params(colors='yellow', which='both', rotation='auto')
+labels = filtered_df['position_start_date'][::100]
+ax.set_xticklabels(labels.dt.date, rotation=30, ha='right')
 ax
 # %%
