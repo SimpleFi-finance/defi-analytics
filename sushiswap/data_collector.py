@@ -1,5 +1,4 @@
 import csv
-import pickle
 from position_handler import PositionHandler
 from graph_clients import SushiswapFarmsClient
 
@@ -40,7 +39,7 @@ def collect_data_for_pool(pool, filename):
     print("Positions after filtering out multi-invest or multi-redeem positions: {0}".format(len(filtered_positions)))
 
     print("Calculating profitability...")
-    profitability_stats = position_handler.calculateProfitabilityOfPositions(filtered_positions)
+    profitability_stats = position_handler.calculateProfitabilityOfPositions(filtered_positions, farm_transactions)
     print("Profitability stats ready")
 
     position_handler.writeProfitabilityStatsToCsv(profitability_stats, filename)
