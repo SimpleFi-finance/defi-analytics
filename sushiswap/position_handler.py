@@ -132,6 +132,27 @@ class PositionHandler:
         price_provider = PriceProvider()
         position_stats = {}
 
+        ## collect all blocks
+        blocks = set()
+        for pos_id in positions.keys():
+            txs = positions[pos_id]
+            blocks.update([tx['blockNumber'] for tx in txs if tx['transactionType'] == 'INVEST' or tx['transactionType'] == 'REDEEM'])
+
+        ## extract input tokens
+        print('inputTokenAmounts ', positions[list(positions.keys())[0]][0]['inputTokenAmounts'])
+
+        tokenA = positions[list(positions.keys())[0]][0]['inputTokenAmounts'][0].split("|")[0]
+        tokenB = positions[list(positions.keys())[0]][0]['inputTokenAmounts'][1].split("|")[0]
+
+        print('tokenA', tokenA)
+        print('tokenB', tokenB)
+
+        ## collect prices
+        prices = {}
+        prices[tokenA] = price_provider.getTokenPriceinUSDForBlocks(tokenA, blocks)
+        prices[tokenB] = price_provider.getTokenPriceinUSDForBlocks(tokenB, blocks)
+
+        ## do calcs for every position
         for pos_id in positions.keys():
             txs = positions[pos_id]
 
@@ -146,9 +167,6 @@ class PositionHandler:
             if position_start_block == position_end_block:
                 continue
 
-            tokenA = txs[0]['inputTokenAmounts'][0].split("|")[0]
-            tokenB = txs[0]['inputTokenAmounts'][1].split("|")[0]
-
             ## sum all investments
             position_investment_value = 0
             investTXs = [tx for tx in txs if tx['transactionType'] == 'INVEST']
@@ -159,14 +177,14 @@ class PositionHandler:
                 block = int(tx['blockNumber'])
 
                 tokenA_amount = int(tx['inputTokenAmounts'][0].split("|")[2]) * pow(10, (-1) * price_provider.decimals(tokenA))
-                tokenA_price = price_provider.getTokenPriceinUSD(tokenA, block)
+                tokenA_price = prices[tokenA][block]
                 if(tokenA_price == None):
                     continue
                 position_investment_value += tokenA_amount * tokenA_price
                 tokenA_total_amount_invested += tokenA_amount
 
                 tokenB_amount = int(tx['inputTokenAmounts'][1].split("|")[2]) * pow(10, (-1) * price_provider.decimals(tokenB))
-                tokenB_price = price_provider.getTokenPriceinUSD(tokenB, block)
+                tokenB_price = prices[tokenB][block]
                 if(tokenB_price == None):
                     continue
                 position_investment_value += tokenB_amount * tokenB_price
@@ -182,17 +200,19 @@ class PositionHandler:
                 block = int(tx['blockNumber'])
 
                 tokenA_amount = int(tx['inputTokenAmounts'][0].split("|")[2]) * pow(10, (-1) * price_provider.decimals(tokenA))
-                tokenA_price = price_provider.getTokenPriceinUSD(tokenA, block)
+                tokenA_price = prices[tokenA][block]
                 if(tokenA_price == None):
                     continue           
                 position_redemption_value += tokenA_amount * tokenA_price
 
                 tokenB_amount = int(tx['inputTokenAmounts'][1].split("|")[2]) * pow(10, (-1) * price_provider.decimals(tokenB))
-                tokenB_price = price_provider.getTokenPriceinUSD(tokenB, block)
+                tokenB_price = prices[tokenB][block]
                 if(tokenB_price == None):
                     continue            
                 position_redemption_value += tokenB_amount * tokenB_price
 
+
+            ## calculate gains
 
             position_redemption_value_if_held = tokenA_total_amount_invested * tokenA_price + tokenB_total_amount_invested * tokenB_price
 
@@ -210,6 +230,7 @@ class PositionHandler:
                     for reward in farm_tx["rewardTokenAmounts"]:
                         claimed_rewards_in_USD = claimed_rewards_in_USD + reward["valueInUSD"]
 
+            ## write stats
             position_stats[pos_id] = {
                 'account': pos_id.split("-")[0],
                 'position_start_block': position_start_block,
@@ -238,7 +259,7 @@ class PositionHandler:
 
         return position_stats
 
-    
+
     def writeProfitabilityStatsToCsv(self, stats, filename):
         """Write all the collected info to CSV file"""
 
