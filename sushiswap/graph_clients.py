@@ -61,11 +61,11 @@ class SushiswapFarmsClient(GraphClient):
     def getFarmTransactionsForPositions(self, farm_address, farm_transactions, pool_transactions):
         farm_transactions_for_positions = {}
 
+        transaction_ids = []  # Required to avoid duplicate transactions 
         for position_id in pool_transactions.keys():
             account_address = pool_transactions[position_id][0]["accountAddress"]
             if not account_address in farm_transactions: continue
             farm_transactions_for_account = farm_transactions[account_address]
-            transaction_ids = []  # Required to avoid duplicate transactions 
 
             for tx in pool_transactions[position_id]:
                 if (tx["transactionType"] == "TRANSFER_OUT" and tx["transferredTo"] == farm_address) or (tx["transactionType"] == "TRANSFER_IN" and tx["transferredFrom"] == farm_address):
