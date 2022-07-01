@@ -154,7 +154,11 @@ class PriceProvider:
 
             tokenB = reserves[1].split("|")[0]
             tokenB_reserve = int(reserves[1].split("|")[2])
-            
+
+            if tokenA_reserve == 0 or tokenB_reserve:
+                token_prices[block] = 0
+                continue
+
             if(tokenA == WETH):
                 token_price_in_eth = (tokenA_reserve * pow(10, (-1) * self.decimals(WETH))) /(tokenB_reserve * pow(10, (-1) * self.decimals(tokenB)))
             else:
