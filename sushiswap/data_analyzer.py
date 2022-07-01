@@ -60,7 +60,7 @@ ax
 # Describe returns
 def remove_outliers(df, column_name):
     q_low = df[column_name].quantile(0.01)
-    q_hi  = df[column_name].quantile(0.99)
+    q_hi  = df[column_name].quantile(0.95)
     return df[(df[column_name] < q_hi) & (df[column_name] > q_low)]
 
 filtered_df = remove_outliers(df, 'pool_roi')
@@ -79,7 +79,8 @@ filtered_df.sort_values(by=['position_end_date'], inplace=True)
 ax = filtered_df.plot.scatter(x='position_end_date', y='pool_roi', s=5)
 ax.set_title('Scatter position closing dates ' + PAIR_NAME, fontweight='bold', color= 'yellow');
 ax.tick_params(colors='yellow', which='both', rotation='auto')
-labels = filtered_df['position_end_date'][::100]
+num_of_ticks = round(len(filtered_df['position_end_date'].index)/10)
+labels = filtered_df['position_end_date'][::num_of_ticks]
 ax.set_xticklabels(labels.dt.date, rotation=30, ha='right')
 ax
 
@@ -88,7 +89,7 @@ filtered_df.sort_values(by=['position_start_date'], inplace=True)
 ax = filtered_df.plot.scatter(x='position_start_date', y='pool_roi', s=5)
 ax.set_title('Scatter position opening dates ' + PAIR_NAME, fontweight='bold', color= 'yellow');
 ax.tick_params(colors='yellow', which='both', rotation='auto')
-labels = filtered_df['position_start_date'][::100]
+labels = filtered_df['position_start_date'][::num_of_ticks]
 ax.set_xticklabels(labels.dt.date, rotation=30, ha='right')
 ax
 # %%

@@ -141,7 +141,7 @@ class PriceProvider:
             #TODO use some other pair
             return None
 
-        marketSnapshots = self.getMarketSnapshotsForBlocks(weth_pair['id'], blocks)
+        marketSnapshots = self.getMarketSnapshotsForBlocks(weth_pair, blocks)
 
         if not marketSnapshots:
             return {}
