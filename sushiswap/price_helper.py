@@ -155,7 +155,7 @@ class PriceProvider:
             tokenB = reserves[1].split("|")[0]
             tokenB_reserve = int(reserves[1].split("|")[2])
 
-            if tokenA_reserve == 0 or tokenB_reserve:
+            if tokenA_reserve == 0 or tokenB_reserve == 0:
                 token_prices[block] = 0
                 continue
 
