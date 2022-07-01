@@ -1,7 +1,11 @@
 #%%
 # Load position data
 import pandas as pd
-df = pd.read_csv("stats/ldo-weth.csv")
+
+PAIR_NAME = "AAVE-WETH"
+FILE_NAME = "aave-weth.csv"
+
+df = pd.read_csv("stats/" + FILE_NAME, parse_dates=["position_end_date", "position_start_date"])
 df.head(10)
 
 # %%
@@ -23,7 +27,7 @@ ax = pool_vs_hodl_roi_profitability.plot(
     shadow=True,
     )
 ax.legend(loc='lower right')
-ax.set_title('AAVE-WETH position profitability', fontweight='bold', color= 'yellow');
+ax.set_title(PAIR_NAME + ' position profitability', fontweight='bold', color= 'yellow');
 ax
 
 # %%
@@ -48,7 +52,44 @@ agg_stats = df.groupby('time_ranges')['is_profitable'].agg(Total='count', Profit
 ax = agg_stats.plot(
     kind='bar',
 )
-ax.set_title('Number of closed positions in AAVE-WETH', fontweight='bold', color= 'yellow');
+ax.set_title('Number of closed positions in ' + PAIR_NAME, fontweight='bold', color= 'yellow');
 ax.tick_params(colors='yellow', which='both', rotation='auto')
+ax
+
+# %%
+# Describe returns
+def remove_outliers(df, column_name):
+    q_low = df[column_name].quantile(0.01)
+    q_hi  = df[column_name].quantile(0.95)
+    return df[(df[column_name] < q_hi) & (df[column_name] > q_low)]
+
+filtered_df = remove_outliers(df, 'pool_roi')
+pd.set_option('display.float_format', '{:.6f}'.format)
+filtered_df["pool_roi"].describe()
+
+# filtered_df['pool_roi'].describe()
+ax = filtered_df["pool_roi"].plot(kind='hist', bins=100)
+ax.set_title('Distribution of returns for ' + PAIR_NAME, fontweight='bold', color= 'yellow');
+ax.tick_params(colors='yellow', which='both', rotation='auto')
+ax
+
+# %%
+# Scatter plot the position pool ROIs
+filtered_df.sort_values(by=['position_end_date'], inplace=True)
+ax = filtered_df.plot.scatter(x='position_end_date', y='pool_roi', s=5)
+ax.set_title('Scatter position closing dates ' + PAIR_NAME, fontweight='bold', color= 'yellow');
+ax.tick_params(colors='yellow', which='both', rotation='auto')
+num_of_ticks = round(len(filtered_df['position_end_date'].index)/10)
+labels = filtered_df['position_end_date'][::num_of_ticks]
+ax.set_xticklabels(labels.dt.date, rotation=30, ha='right')
+ax
+
+# %%
+filtered_df.sort_values(by=['position_start_date'], inplace=True)
+ax = filtered_df.plot.scatter(x='position_start_date', y='pool_roi', s=5)
+ax.set_title('Scatter position opening dates ' + PAIR_NAME, fontweight='bold', color= 'yellow');
+ax.tick_params(colors='yellow', which='both', rotation='auto')
+labels = filtered_df['position_start_date'][::num_of_ticks]
+ax.set_xticklabels(labels.dt.date, rotation=30, ha='right')
 ax
 # %%

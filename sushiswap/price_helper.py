@@ -56,7 +56,7 @@ class PriceProvider:
             return None
 
         query = self._load_query('queries/pair_reserves.graphql')
-        vars = {"block": block, "market": weth_pair['id']}
+        vars = {"block": block, "market": weth_pair}
         response = self._client.execute(query, variable_values=vars)
 
         if response['market'] is None:
@@ -141,7 +141,7 @@ class PriceProvider:
             #TODO use some other pair
             return None
 
-        marketSnapshots = self.getMarketSnapshotsForBlocks(weth_pair['id'], blocks)
+        marketSnapshots = self.getMarketSnapshotsForBlocks(weth_pair, blocks)
 
         if not marketSnapshots:
             return {}
@@ -154,7 +154,11 @@ class PriceProvider:
 
             tokenB = reserves[1].split("|")[0]
             tokenB_reserve = int(reserves[1].split("|")[2])
-            
+
+            if tokenA_reserve == 0 or tokenB_reserve:
+                token_prices[block] = 0
+                continue
+
             if(tokenA == WETH):
                 token_price_in_eth = (tokenA_reserve * pow(10, (-1) * self.decimals(WETH))) /(tokenB_reserve * pow(10, (-1) * self.decimals(tokenB)))
             else:
@@ -180,7 +184,7 @@ class PriceProvider:
         if response['markets'] == None or len(response['markets']) == 0:
             return None
 
-        weth_pair = response['markets'][0]
+        weth_pair = response['markets'][0]['id']
         self._weth_pairs[token] = weth_pair
 
         return weth_pair

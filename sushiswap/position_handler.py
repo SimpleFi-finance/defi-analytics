@@ -2,6 +2,8 @@ import csv
 from gql import gql, Client
 from gql.transport.aiohttp import AIOHTTPTransport
 from price_helper import PriceProvider
+from datetime import datetime
+import time
 
 class PositionHandler:
 
@@ -9,7 +11,6 @@ class PositionHandler:
         self._subgraph_endpoint = endpoint
         transport = AIOHTTPTransport(url=endpoint)
         self._client = Client(transport=transport, fetch_schema_from_transport=True, execute_timeout=120)
-
 
     def getRawClosedPositions(self, market):
         """Fetch closed positions from the Sushiswap subgraph.
@@ -33,13 +34,12 @@ class PositionHandler:
                     tx["accountAddress"] = position["accountAddress"]
                     tx["blockNumber"] = int(tx["blockNumber"])
                     raw_positions[position['id']].append(tx)
-            
+
             lastID = response['positions'][-1]['id']
             print("Processed positions:", len(raw_positions))
         
         ordered_raw_positions = dict(sorted(raw_positions.items(), key=lambda item: (item[0].rsplit('-', 1)[0], int(item[0].split("-")[-1]))))
         return ordered_raw_positions
-
 
     def mergePositionsByHistory(self, raw_positions):
         """Merge positions which are part of same user history.
@@ -50,7 +50,9 @@ class PositionHandler:
         merged_positions = {}
         processed_positions = {}
 
-        for position_id in raw_positions.keys():
+        ordered_raw_positions = dict(sorted(raw_positions.items(), key=lambda item: (item[0].rsplit('-', 1)[0], int(item[0].split("-")[-1]))))
+
+        for position_id in ordered_raw_positions.keys():
             # don't process position which was already processed as part of position merging
             if processed_positions.get(position_id) == True:
                 continue
@@ -125,53 +127,96 @@ class PositionHandler:
         """Return dict of position profitability stats.
         For every position calculate net gains, ROI gains and pool vs HODL. difference.
         """
+        start_time = time.time()
 
         price_provider = PriceProvider()
         position_stats = {}
 
+        ## collect all blocks
+        blocks = set()
+        for pos_id in positions.keys():
+            txs = positions[pos_id]
+            blocks.update([tx['blockNumber'] for tx in txs if tx['transactionType'] == 'INVEST' or tx['transactionType'] == 'REDEEM'])
+
+        ## extract input tokens
+        tokenA = positions[list(positions.keys())[0]][0]['inputTokenAmounts'][0].split("|")[0]
+        tokenB = positions[list(positions.keys())[0]][0]['inputTokenAmounts'][1].split("|")[0]
+
+        ## collect prices
+        prices = {}
+        prices[tokenA] = price_provider.getTokenPriceinUSDForBlocks(tokenA, blocks)
+        prices[tokenB] = price_provider.getTokenPriceinUSDForBlocks(tokenB, blocks)
+
+        ## do calcs for every position
         for pos_id in positions.keys():
             txs = positions[pos_id]
 
-            first_tx = txs[0]
-            last_tx = txs[-1]
+            position_start_block = txs[0]['blockNumber']
+            position_end_block = txs[-1]['blockNumber']
+            start_timestamp = int(txs[0]['timestamp'])
+            position_start_date = datetime.strftime(datetime.fromtimestamp(start_timestamp), '%Y-%m-%d')
+            end_timestamp = int(txs[-1]['timestamp'])
+            position_end_date = datetime.strftime(datetime.fromtimestamp(end_timestamp), '%Y-%m-%d')
 
-            position_start_block = int(first_tx['blockNumber'])
-            position_end_block = int(last_tx['blockNumber'])
-
-            inputTokenAmountsAStart = first_tx['inputTokenAmounts'][0].split("|")
-            tokenA = inputTokenAmountsAStart[0]
-            tokenA_amount_start = int(inputTokenAmountsAStart[2]) * pow(10, (-1) * price_provider.decimals(tokenA))
-            tokenA_price_start = price_provider.getTokenPriceinUSD(tokenA, position_start_block)
-            if(tokenA_price_start == None):
+            # don't handle one TX position opening/closing
+            if position_start_block == position_end_block:
                 continue
 
-            tokenA_amount_end = int(last_tx['inputTokenAmounts'][0].split("|")[2]) * pow(10, (-1) * price_provider.decimals(tokenA))
-            tokenA_price_end = price_provider.getTokenPriceinUSD(tokenA, position_end_block)
-            if(tokenA_price_end == None):
-                continue
+            ## sum all investments
+            position_investment_value = 0
+            investTXs = [tx for tx in txs if tx['transactionType'] == 'INVEST']
 
-            inputTokenAmountsBStart = first_tx['inputTokenAmounts'][1].split("|")
-            tokenB = inputTokenAmountsBStart[0]
-            tokenB_amount_start = int(inputTokenAmountsBStart[2]) * pow(10, (-1) * price_provider.decimals(tokenB))
-            tokenB_price_start = price_provider.getTokenPriceinUSD(tokenB, position_start_block)
-            if(tokenB_price_start == None):
-                continue
+            tokenA_total_amount_invested = 0
+            tokenB_total_amount_invested = 0
+            for tx in investTXs:
+                block = int(tx['blockNumber'])
 
-            tokenB_amount_end = int(last_tx['inputTokenAmounts'][1].split("|")[2]) * pow(10, (-1) * price_provider.decimals(tokenB))
-            tokenB_price_end = price_provider.getTokenPriceinUSD(tokenB, position_end_block)
-            if(tokenB_price_end == None):
-                continue
+                tokenA_amount = int(tx['inputTokenAmounts'][0].split("|")[2]) * pow(10, (-1) * price_provider.decimals(tokenA))
+                tokenA_price = prices[tokenA][block]
+                if(tokenA_price == None):
+                    continue
+                position_investment_value += tokenA_amount * tokenA_price
+                tokenA_total_amount_invested += tokenA_amount
 
-            position_start_value = tokenA_amount_start * tokenA_price_start + tokenB_amount_start * tokenB_price_start
-            position_end_value = tokenA_amount_end * tokenA_price_end + tokenB_amount_end * tokenB_price_end
-            position_end_value_if_held = tokenA_amount_start * tokenA_price_end + tokenB_amount_start * tokenB_price_end
+                tokenB_amount = int(tx['inputTokenAmounts'][1].split("|")[2]) * pow(10, (-1) * price_provider.decimals(tokenB))
+                tokenB_price = prices[tokenB][block]
+                if(tokenB_price == None):
+                    continue
+                position_investment_value += tokenB_amount * tokenB_price
+                tokenB_total_amount_invested += tokenB_amount
 
-            pool_net_gain = position_end_value - position_start_value
-            hodl_net_gain = position_end_value_if_held - position_start_value
+            ## sum all redemptions
+            redeemTXs = [tx for tx in txs if tx['transactionType'] == 'REDEEM']
+            position_redemption_value = 0
 
-            pool_roi = pool_net_gain / position_start_value
-            hodl_roi = hodl_net_gain / position_start_value
-            pool_vs_hodl_roi = (position_end_value - position_end_value_if_held) / position_end_value
+            tokenA_price = 0
+            tokenB_price = 0
+            for tx in redeemTXs:
+                block = int(tx['blockNumber'])
+
+                tokenA_amount = int(tx['inputTokenAmounts'][0].split("|")[2]) * pow(10, (-1) * price_provider.decimals(tokenA))
+                tokenA_price = prices[tokenA][block]
+                if(tokenA_price == None):
+                    continue           
+                position_redemption_value += tokenA_amount * tokenA_price
+
+                tokenB_amount = int(tx['inputTokenAmounts'][1].split("|")[2]) * pow(10, (-1) * price_provider.decimals(tokenB))
+                tokenB_price = prices[tokenB][block]
+                if(tokenB_price == None):
+                    continue            
+                position_redemption_value += tokenB_amount * tokenB_price
+
+
+            ## calculate gains
+
+            position_redemption_value_if_held = tokenA_total_amount_invested * tokenA_price + tokenB_total_amount_invested * tokenB_price
+
+            pool_net_gain = position_redemption_value - position_investment_value
+            hodl_net_gain = position_redemption_value_if_held - position_investment_value
+
+            pool_roi = pool_net_gain / position_investment_value
+            hodl_roi = hodl_net_gain / position_investment_value
+            pool_vs_hodl_roi = (position_redemption_value - position_redemption_value_if_held) / position_redemption_value_if_held
 
             # Calculation total farm rewards
             claimed_rewards_in_USD = 0
@@ -180,23 +225,18 @@ class PositionHandler:
                     for reward in farm_tx["rewardTokenAmounts"]:
                         claimed_rewards_in_USD = claimed_rewards_in_USD + reward["valueInUSD"]
 
+            ## write stats
             position_stats[pos_id] = {
                 'account': pos_id.split("-")[0],
                 'position_start_block': position_start_block,
                 'position_end_block': position_end_block,
+                'position_start_date': position_start_date,
+                'position_end_date': position_end_date,
                 'tokenA': tokenA,
-                'tokenA_amount_start': tokenA_amount_start,
-                'tokenA_price_start': tokenA_price_start,
-                'tokenA_amount_end': tokenA_amount_end,
-                'tokenA_price_end': tokenA_price_end,
                 'tokenB': tokenB,
-                'tokenB_amount_start': tokenB_amount_start,
-                'tokenB_price_start': tokenB_price_start,
-                'tokenB_amount_end': tokenB_amount_end,
-                'tokenB_price_end': tokenB_price_end,
-                'position_start_value': position_start_value,
-                'position_end_value': position_end_value,
-                'position_end_value_if_held': position_end_value_if_held,
+                'position_investment_value': position_investment_value,
+                'position_redemption_value': position_redemption_value,
+                'position_redemption_value_if_held': position_redemption_value_if_held,
                 'pool_net_gain': pool_net_gain,
                 'hodl_net_gain': hodl_net_gain,
                 'pool_roi': pool_roi,
@@ -208,9 +248,13 @@ class PositionHandler:
             if(len(position_stats.keys()) % 10 == 0):
                 print(len(position_stats.keys()))
 
+        end_time = time.time()
+
+        print("--- %s seconds ---" % (end_time - start_time))
+
         return position_stats
 
-    
+
     def writeProfitabilityStatsToCsv(self, stats, filename):
         """Write all the collected info to CSV file"""
 
@@ -219,19 +263,13 @@ class PositionHandler:
                 'account',
                 'position_start_block',
                 'position_end_block',
+                'position_start_date',
+                'position_end_date',
                 'tokenA',
-                'tokenA_amount_start',
-                'tokenA_price_start',
-                'tokenA_amount_end',
-                'tokenA_price_end',
                 'tokenB',
-                'tokenB_amount_start',
-                'tokenB_price_start',
-                'tokenB_amount_end',
-                'tokenB_price_end',
-                'position_start_value',
-                'position_end_value',
-                'position_end_value_if_held',
+                'position_investment_value',
+                'position_redemption_value',
+                'position_redemption_value_if_held',
                 'pool_net_gain',
                 'hodl_net_gain',
                 'pool_roi',

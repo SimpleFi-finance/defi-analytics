@@ -35,11 +35,8 @@ def collect_data_for_pool(pool, filename):
     farm_transactions = collect_data_for_farms(pool, merged_positions)
     print("Farm transactions for merged positions: {0}".format(len(farm_transactions)))
 
-    filtered_positions = position_handler.filterOutPositionsWithMultipleInvestsOrRedeems(merged_positions)
-    print("Positions after filtering out multi-invest or multi-redeem positions: {0}".format(len(filtered_positions)))
-
     print("Calculating profitability...")
-    profitability_stats = position_handler.calculateProfitabilityOfPositions(filtered_positions, farm_transactions)
+    profitability_stats = position_handler.calculateProfitabilityOfPositions(merged_positions, farm_transactions)
     print("Profitability stats ready")
 
     position_handler.writeProfitabilityStatsToCsv(profitability_stats, filename)
@@ -106,8 +103,8 @@ def profitability_ratio(filename):
         print("Profitable compared to HODL strategy: {} positions ({:.2f}%)".format(profitable, round(pool_vs_hodl_profitable_ratio * 100, 2)))
 
 def main():
-    collect_data_for_dai_weth()
-    # collect_data_for_ldo_weth()
+    # collect_data_for_dai_weth()
+    collect_data_for_ldo_weth()
     # collect_data_for_aave_weth()
     # collect_data_for_usdc_weth()
     # collect_data_for_wbtc_weth()
