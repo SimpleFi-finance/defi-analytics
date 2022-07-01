@@ -139,13 +139,8 @@ class PositionHandler:
             blocks.update([tx['blockNumber'] for tx in txs if tx['transactionType'] == 'INVEST' or tx['transactionType'] == 'REDEEM'])
 
         ## extract input tokens
-        print('inputTokenAmounts ', positions[list(positions.keys())[0]][0]['inputTokenAmounts'])
-
         tokenA = positions[list(positions.keys())[0]][0]['inputTokenAmounts'][0].split("|")[0]
         tokenB = positions[list(positions.keys())[0]][0]['inputTokenAmounts'][1].split("|")[0]
-
-        print('tokenA', tokenA)
-        print('tokenB', tokenB)
 
         ## collect prices
         prices = {}
