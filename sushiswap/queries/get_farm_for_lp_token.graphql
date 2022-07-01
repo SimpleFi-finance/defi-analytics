@@ -1,0 +1,8 @@
+query ($lpToken: String!) {
+  markets(where: { inputTokens: [$lpToken] }) {
+    id
+    inputTokens {
+      id
+    }
+  }
+}

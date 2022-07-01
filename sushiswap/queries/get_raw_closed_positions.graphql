@@ -9,7 +9,11 @@ query ($lastID: ID, $market: String!) {
         blockNumber
         inputTokenAmounts
         outputTokenAmount
+        rewardTokenAmounts
         transactionType
+        transferredTo
+        transferredFrom
+        transactionHash
       }
     }
   }

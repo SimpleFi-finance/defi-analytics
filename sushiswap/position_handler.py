@@ -30,12 +30,15 @@ class PositionHandler:
                 raw_positions[position['id']] = []
                 for positionSnapshot in position['history']:
                     tx = positionSnapshot['transaction']
+                    tx["accountAddress"] = position["accountAddress"]
+                    tx["blockNumber"] = int(tx["blockNumber"])
                     raw_positions[position['id']].append(tx)
             
             lastID = response['positions'][-1]['id']
             print("Processed positions:", len(raw_positions))
         
-        return raw_positions
+        ordered_raw_positions = dict(sorted(raw_positions.items(), key=lambda item: (item[0].rsplit('-', 1)[0], int(item[0].split("-")[-1]))))
+        return ordered_raw_positions
 
 
     def mergePositionsByHistory(self, raw_positions):
@@ -118,7 +121,7 @@ class PositionHandler:
         return filtered_positions
 
     
-    def calculateProfitabilityOfPositions(self, positions):
+    def calculateProfitabilityOfPositions(self, positions, farm_transactions):
         """Return dict of position profitability stats.
         For every position calculate net gains, ROI gains and pool vs HODL. difference.
         """
@@ -170,6 +173,13 @@ class PositionHandler:
             hodl_roi = hodl_net_gain / position_start_value
             pool_vs_hodl_roi = (position_end_value - position_end_value_if_held) / position_end_value
 
+            # Calculation total farm rewards
+            claimed_rewards_in_USD = 0
+            if pos_id in farm_transactions:
+                for farm_tx in farm_transactions[pos_id]:
+                    for reward in farm_tx["rewardTokenAmounts"]:
+                        claimed_rewards_in_USD = claimed_rewards_in_USD + reward["valueInUSD"]
+
             position_stats[pos_id] = {
                 'account': pos_id.split("-")[0],
                 'position_start_block': position_start_block,
@@ -191,7 +201,8 @@ class PositionHandler:
                 'hodl_net_gain': hodl_net_gain,
                 'pool_roi': pool_roi,
                 'hodl_roi': hodl_roi,
-                'pool_vs_hodl_roi': pool_vs_hodl_roi
+                'pool_vs_hodl_roi': pool_vs_hodl_roi,
+                'claimed_rewards_in_USD': claimed_rewards_in_USD
             }
 
             if(len(position_stats.keys()) % 10 == 0):
@@ -225,7 +236,8 @@ class PositionHandler:
                 'hodl_net_gain',
                 'pool_roi',
                 'hodl_roi',
-                'pool_vs_hodl_roi'
+                'pool_vs_hodl_roi',
+                'claimed_rewards_in_USD'
         ])
         writer.writeheader()
 

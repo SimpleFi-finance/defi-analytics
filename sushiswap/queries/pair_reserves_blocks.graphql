@@ -1,0 +1,10 @@
+query ($market: String!, $blocks: [BigInt!]) {
+  marketSnapshots(where: {
+    market: $market, 
+    blockNumber_in: $blocks,
+  }, orderBy: blockNumber) {
+    id
+    inputTokenBalances
+    blockNumber
+  }
+}
