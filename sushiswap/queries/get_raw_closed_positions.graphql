@@ -10,7 +10,11 @@ query ($lastID: ID, $market: String!) {
         timestamp
         inputTokenAmounts
         outputTokenAmount
+        rewardTokenAmounts
         transactionType
+        transferredTo
+        transferredFrom
+        transactionHash
       }
     }
   }
