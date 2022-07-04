@@ -3,6 +3,8 @@ from position_handler import PositionHandler
 from graph_clients import SushiswapFarmsClient
 
 SUSHISWAP_ENDPOINT = "https://api.thegraph.com/subgraphs/name/simplefi-finance/sushiswap"
+SUSHISWAP_FARMS_ENDPOINT = "https://api.thegraph.com/subgraphs/name/simplefi-finance/sushiswap-farms"
+
 DAI_WETH_POOL = "0xc3d03e4f041fd4cd388c549ee2a29a9e5075882f"
 LDO_WETH_POOL = "0xc558f600b34a5f69dd2f0d06cb8a88d829b7420a"
 AAVE_WETH_POOL = "0xd75ea151a61d06868e31f8988d28dfe5e9df57b4"
@@ -10,16 +12,12 @@ USDC_WETH_POOL = "0x397ff1542f962076d0bfe58ea045ffa2d347aca0"
 WBTC_WETH_POOL = "0xceff51756c56ceffca006cd410b03ffc46dd3a58"
 USDT_WETH_POOL = "0x06da0fd433c1a5d7a4faa01111c044910a184553"
 YFI_WETH_POOL = "0x088ee5007c98a9677165d78dd2109ae4a3d04d0c"
-
-# Sushiswap Farms
-SUSHISWAP_FARMS_ENDPOINT = "https://api.thegraph.com/subgraphs/name/simplefi-finance/sushiswap-farms"
-# DAI_WETH_POOL = "0xc2edad668740f1aa35e4d8f227fb8e17dca888cd-2"
-# LDO_WETH_POOL = "0xc2edad668740f1aa35e4d8f227fb8e17dca888cd-109"
-# AAVE_WETH_POOL = "0xc2edad668740f1aa35e4d8f227fb8e17dca888cd-37"
-# USDC_WETH_POOL = "0xc2edad668740f1aa35e4d8f227fb8e17dca888cd-1"
-# WBTC_WETH_POOL = "0xc2edad668740f1aa35e4d8f227fb8e17dca888cd-21"
-# USDT_WETH_POOL = "0xc2edad668740f1aa35e4d8f227fb8e17dca888cd-0"
-# YFI_WETH_POOL = "0xc2edad668740f1aa35e4d8f227fb8e17dca888cd-11"
+ILV_WETH_POOL = "0x6a091a3406e0073c3cd6340122143009adac0eda"
+OHM_WETH_POOL = "0x69b81152c5a8d35a67b32a4d3772795d96cae4da"
+TOKE_WETH_POOL = "0xd4e7a6e2d03e4e48dfc27dd3f46df1c176647e38"
+SUSHI_WETH_POOL = "0x795065dcc9f64b5614c407a6efdc400da6221fb0"
+BIT_WETH_POOL = "0xe12af1218b4e9272e9628d7c7dc6354d137d024e"
+ALCX_WETH_POOL = "0xc3f279090a47e80990fe3a9c30d24cb117ef91a8"
 
 def collect_data_for_pool(pool, filename):
     position_handler = PositionHandler(SUSHISWAP_ENDPOINT)
@@ -77,6 +75,24 @@ def collect_data_for_usdt_weth():
 def collect_data_for_yfi_weth():
     collect_data_for_pool(YFI_WETH_POOL, "stats/yfi-weth.csv")
 
+def collect_data_for_ilv_weth():
+    collect_data_for_pool(ILV_WETH_POOL, "stats/ilv-weth.csv")
+
+def collect_data_for_ohm_weth():
+    collect_data_for_pool(OHM_WETH_POOL, "stats/ohm-weth.csv")
+
+def collect_data_for_toke_weth():
+    collect_data_for_pool(TOKE_WETH_POOL, "stats/toke-weth.csv")
+
+def collect_data_for_sushi_weth():
+    collect_data_for_pool(SUSHI_WETH_POOL, "stats/sushi-weth.csv")
+
+def collect_data_for_bit_weth():
+    collect_data_for_pool(BIT_WETH_POOL, "stats/bit-weth.csv")
+
+def collect_data_for_alcx_weth():
+    collect_data_for_pool(ALCX_WETH_POOL, "stats/alcx-weth.csv")
+
 def profitability_ratio(filename):
     profitable = 0
     non_profitable = 0
@@ -104,20 +120,19 @@ def profitability_ratio(filename):
 
 def main():
     # collect_data_for_dai_weth()
-    collect_data_for_ldo_weth()
+    # collect_data_for_ldo_weth()
     # collect_data_for_aave_weth()
     # collect_data_for_usdc_weth()
     # collect_data_for_wbtc_weth()
     # collect_data_for_usdt_weth()
     # collect_data_for_yfi_weth()
+    # collect_data_for_ilv_weth()
 
-    # profitability_ratio("stats/dai-eth.csv")
-    # profitability_ratio("stats/ldo-weth.csv")
-    # profitability_ratio("stats/aave-weth.csv")
-    # profitability_ratio("stats/usdc-weth.csv")
-    # profitability_ratio("stats/wbtc-weth.csv")
-    # profitability_ratio("stats/usdt-weth.csv")
-    # profitability_ratio("stats/yfi-weth.csv")
+    collect_data_for_ohm_weth()
+    collect_data_for_toke_weth()
+    collect_data_for_sushi_weth()
+    collect_data_for_bit_weth()
+    collect_data_for_alcx_weth()
 
 if __name__ == "__main__":
     main()
