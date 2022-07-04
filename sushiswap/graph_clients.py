@@ -79,6 +79,89 @@ class SushiswapFarmsClient(GraphClient):
 
         return farm_transactions_for_positions
     
+    # Fuctions for processing all farms together
+    def getAllMarkets(self,):
+        """Fetch all markets from the Sushiswap subgraph.
+        Return a dictionary where key is input token and value market id.
+        """
+        
+        markets = {}
+        lastID = ""
+
+        while True:
+            vars = {"lastID": lastID}
+            query = self._load_query('queries/get_all_markets.graphql')
+            response = self._client.execute(query, variable_values=vars)
+            if not response['markets']:
+                break
+
+            for market in response['markets']:
+                for input_token in market["inputTokens"]:
+                  markets[input_token["id"]] = market["id"]
+            
+            lastID = response['markets'][-1]['id']
+            print("Processed farm markets:", len(response["markets"]))
+        
+        return markets
+
+    # Two methods below assume that there is only one farm for every LP token
+    def getTransactionsOfAllClosedPositions(self):
+        """Fetch closed positions from the Sushiswap subgraph.
+        Return a dictionary where key is account address of position and value is list of TXs.
+        """
+        
+        raw_positions = {}
+        lastID = ""
+
+        while True:
+            vars = {"lastID": lastID}
+            query = self._load_query('queries/get_all_raw_closed_positions.graphql')
+            response = self._client.execute(query, variable_values=vars)
+            if not response['positions']:
+                break
+
+            for position in response['positions']:
+                if not position['accountAddress'] in raw_positions: raw_positions[position['accountAddress']] = []
+                for positionSnapshot in position['history']:
+                    tx = positionSnapshot['transaction']
+                    tx["blockNumber"] = int(tx["blockNumber"])
+                    tx["marketId"] = position["id"].split("-")[1]
+                    raw_positions[position['accountAddress']].append(tx)
+            
+            lastID = response['positions'][-1]['id']
+            print("Processed farm positions:", len(raw_positions))
+        
+        return raw_positions
+
+    def getFarmTransactionsForAllPositions(self, farms, farm_transactions, pool_transactions):
+        farm_transactions_for_positions = {}
+
+        transaction_ids = []  # Required to avoid duplicate transactions 
+        for position_id in pool_transactions.keys():
+            account_address = pool_transactions[position_id][0]["accountAddress"]
+            if not account_address in farm_transactions: continue
+            
+            pool_address = position_id.split("-")[1]
+            if not pool_address in farms: continue
+
+            # Filter by input token for the farm which is a LP token of an exchange pool
+            farm_address = farms[pool_address]
+            farm_transactions_for_account = list(filter(lambda x: x["marketId"] == farm_address, farm_transactions[account_address]))
+
+            if not farm_transactions_for_account: continue
+
+            for tx in pool_transactions[position_id]:
+                if (tx["transactionType"] == "TRANSFER_OUT" and tx["transferredTo"] == farm_address) or (tx["transactionType"] == "TRANSFER_IN" and tx["transferredFrom"] == farm_address):
+                    transactions = list(filter(lambda x: x["transactionHash"] == tx["transactionHash"], farm_transactions_for_account))
+                    if transactions:
+                        if not position_id in farm_transactions_for_positions: farm_transactions_for_positions[position_id] = []
+                        for transaction in transactions:
+                            if not transaction["id"] in transaction_ids:
+                                farm_transactions_for_positions[position_id].append(transaction)
+                                transaction_ids.append(transaction["id"])
+
+        return farm_transactions_for_positions
+    
     def addRewardValueInUSD(self, farm_transactions):
         blocks = []
         rewardTokens = []

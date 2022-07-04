@@ -102,10 +102,8 @@ def collect_data_for_all_pools():
     merged_positions = position_handler.mergePositionsByHistory(raw_positions)
     print("Positions after merging histories: {0}".format(len(merged_positions)))
 
-    # Call farm data to get farm transactions list here
-    # We can optimize it by fetching farm data and sending it to mergePositionByHistory to reduce number of loops
-    # farm_transactions = collect_data_for_farms(pool, merged_positions)
-    # print("Farm transactions for merged positions: {0}".format(len(farm_transactions)))
+    farm_transactions = collect_data_for_all_farms(merged_positions)
+    print("Farm transactions for merged positions: {0}".format(len(farm_transactions)))
 
     print("Calculating profitability...")
     profitability_stats = position_handler.calculateProfitabilityOfPositions(merged_positions, [])
@@ -114,6 +112,16 @@ def collect_data_for_all_pools():
     filename = "stats/all-positions.csv"
     position_handler.writeProfitabilityStatsToCsv(profitability_stats, filename)
     print("Stats written to {0}".format(filename))
+
+def collect_data_for_all_farms(positions):
+    farm_client = SushiswapFarmsClient()
+    
+    farms = farm_client.getAllMarkets()
+    farm_transactions = farm_client.getTransactionsOfAllClosedPositions()
+    farm_transactions_for_positions = farm_client.getFarmTransactionsForAllPositions(farms, farm_transactions, positions)
+    farm_transactions_with_prices = farm_client.addRewardValueInUSD(farm_transactions_for_positions)
+
+    return farm_transactions_with_prices
 
 def main():
     # collect_data_for_dai_weth()

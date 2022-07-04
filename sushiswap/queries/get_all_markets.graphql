@@ -1,0 +1,8 @@
+query ($lastID: ID) {
+  markets(first: 1000, where: { id_gt: $lastID}) {
+    id
+    inputTokens {
+      id
+    }
+  }
+}
