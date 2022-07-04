@@ -2,8 +2,8 @@
 # Load position data
 import pandas as pd
 
-PAIR_NAME = "AAVE-WETH"
-FILE_NAME = "aave-weth.csv"
+PAIR_NAME = "SUSHI-WETH"
+FILE_NAME = "sushi-weth.csv"
 
 df = pd.read_csv("stats/" + FILE_NAME, parse_dates=["position_end_date", "position_start_date"])
 df.head(10)
@@ -28,6 +28,32 @@ ax = pool_vs_hodl_roi_profitability.plot(
     )
 ax.legend(loc='lower right')
 ax.set_title(PAIR_NAME + ' position profitability', fontweight='bold', color= 'yellow');
+ax
+
+# %%
+# Plot ratio of profitable/non-profitable positions, including rewards, compared to HODL
+
+df['total_roi'] = df['pool_net_gain'] + df['claimed_rewards_in_USD']
+df['total_roi_vs_hodl_roi'] = df['pool_vs_hodl_roi'] + df['claimed_rewards_in_USD']/df['position_redemption_value_if_held']
+
+total_profitability = df['total_roi_vs_hodl_roi'].agg(
+    profitable_positions = lambda s: s.gt(0).sum(),
+    non_profitable_positions = lambda s: s.lt(0).sum()
+)
+
+ax = total_profitability.plot(
+    kind='pie',
+    legend=True,
+    labeldistance=None,
+    ylabel='',
+    labels=['Outperformed HODL', 'Underperformed HODL'],
+    autopct='%1.1f%%',
+    explode=[0.05, 0.05],
+    colors = ['green', 'red'],
+    shadow=True,
+    )
+ax.legend(loc='lower right')
+ax.set_title(PAIR_NAME + ' position profitability including rewards', fontweight='bold', color= 'yellow');
 ax
 
 # %%
@@ -74,7 +100,7 @@ ax.tick_params(colors='yellow', which='both', rotation='auto')
 ax
 
 # %%
-# Scatter plot the position pool ROIs
+# Plot correlation between pool ROIs and position closing date
 filtered_df.sort_values(by=['position_end_date'], inplace=True)
 ax = filtered_df.plot.scatter(x='position_end_date', y='pool_roi', s=5)
 ax.set_title('Scatter position closing dates ' + PAIR_NAME, fontweight='bold', color= 'yellow');
@@ -85,6 +111,7 @@ ax.set_xticklabels(labels.dt.date, rotation=30, ha='right')
 ax
 
 # %%
+# Plot correlation between pool ROIs and position opening date
 filtered_df.sort_values(by=['position_start_date'], inplace=True)
 ax = filtered_df.plot.scatter(x='position_start_date', y='pool_roi', s=5)
 ax.set_title('Scatter position opening dates ' + PAIR_NAME, fontweight='bold', color= 'yellow');
@@ -92,4 +119,6 @@ ax.tick_params(colors='yellow', which='both', rotation='auto')
 labels = filtered_df['position_start_date'][::num_of_ticks]
 ax.set_xticklabels(labels.dt.date, rotation=30, ha='right')
 ax
+
+
 # %%
