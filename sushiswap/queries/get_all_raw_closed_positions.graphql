@@ -1,0 +1,21 @@
+query ($lastID: ID) {
+  positions(first: 1000, where: { id_gt: $lastID, closed: true }) {
+    id
+    accountAddress
+    history {
+      id
+      transaction {
+        id
+        blockNumber
+        timestamp
+        inputTokenAmounts
+        outputTokenAmount
+        rewardTokenAmounts
+        transactionType
+        transferredTo
+        transferredFrom
+        transactionHash
+      }
+    }
+  }
+}

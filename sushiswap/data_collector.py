@@ -93,30 +93,27 @@ def collect_data_for_bit_weth():
 def collect_data_for_alcx_weth():
     collect_data_for_pool(ALCX_WETH_POOL, "stats/alcx-weth.csv")
 
-def profitability_ratio(filename):
-    profitable = 0
-    non_profitable = 0
-    net_gain_profitable = 0
-    net_gain_non_profitable = 0
-    with open(filename, mode='r') as csv_file:
-        stats = csv.DictReader(csv_file)
+def collect_data_for_all_pools():
+    position_handler = PositionHandler(SUSHISWAP_ENDPOINT)
 
-        for row in stats:
-            if float(row['pool_vs_hodl_roi']) > 0:
-                profitable += 1
-            else:
-                non_profitable += 1
+    raw_positions = position_handler.getAllRawClosedPositions()
+    print("Positions loaded from subgraph: {0}".format(len(raw_positions)))
 
-            if float(row['pool_roi']) > 0:
-                net_gain_profitable += 1
-            else:
-                net_gain_non_profitable += 1
+    merged_positions = position_handler.mergePositionsByHistory(raw_positions)
+    print("Positions after merging histories: {0}".format(len(merged_positions)))
 
-        net_percentage = net_gain_profitable/(net_gain_profitable+net_gain_non_profitable)
-        print("Net gain profitable: {} positions ({:.2f}%)".format(net_gain_profitable, round(net_percentage * 100, 2)))
+    # Call farm data to get farm transactions list here
+    # We can optimize it by fetching farm data and sending it to mergePositionByHistory to reduce number of loops
+    # farm_transactions = collect_data_for_farms(pool, merged_positions)
+    # print("Farm transactions for merged positions: {0}".format(len(farm_transactions)))
 
-        pool_vs_hodl_profitable_ratio = profitable / (profitable+non_profitable)
-        print("Profitable compared to HODL strategy: {} positions ({:.2f}%)".format(profitable, round(pool_vs_hodl_profitable_ratio * 100, 2)))
+    print("Calculating profitability...")
+    profitability_stats = position_handler.calculateProfitabilityOfPositions(merged_positions, [])
+    print("Profitability stats ready")
+
+    filename = "stats/all-positions.csv"
+    position_handler.writeProfitabilityStatsToCsv(profitability_stats, filename)
+    print("Stats written to {0}".format(filename))
 
 def main():
     # collect_data_for_dai_weth()
@@ -128,11 +125,13 @@ def main():
     # collect_data_for_yfi_weth()
     # collect_data_for_ilv_weth()
 
-    collect_data_for_ohm_weth()
-    collect_data_for_toke_weth()
-    collect_data_for_sushi_weth()
-    collect_data_for_bit_weth()
-    collect_data_for_alcx_weth()
+    # collect_data_for_ohm_weth()
+    # collect_data_for_toke_weth()
+    # collect_data_for_sushi_weth()
+    # collect_data_for_bit_weth()
+    # collect_data_for_alcx_weth()
+
+    collect_data_for_all_pools()
 
 if __name__ == "__main__":
     main()

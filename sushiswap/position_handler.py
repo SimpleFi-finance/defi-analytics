@@ -41,6 +41,35 @@ class PositionHandler:
         ordered_raw_positions = dict(sorted(raw_positions.items(), key=lambda item: (item[0].rsplit('-', 1)[0], int(item[0].split("-")[-1]))))
         return ordered_raw_positions
 
+    def getAllRawClosedPositions(self):
+        """Fetch all closed positions from the Sushiswap subgraph, in all markets.
+        Return a dictionary where key is position ID and value list of TXs.
+        """
+
+        raw_positions = {}
+        lastID = ""
+
+        while True:
+            vars = {"lastID": lastID}
+            query = self._load_query('queries/get_all_raw_closed_positions.graphql')
+            response = self._client.execute(query, variable_values=vars)
+            if not response['positions']:
+                break
+
+            for position in response['positions']:
+                raw_positions[position['id']] = []
+                for positionSnapshot in position['history']:
+                    tx = positionSnapshot['transaction']
+                    tx["accountAddress"] = position["accountAddress"]
+                    tx["blockNumber"] = int(tx["blockNumber"])
+                    raw_positions[position['id']].append(tx)
+
+            lastID = response['positions'][-1]['id']
+            print("Processed positions:", len(raw_positions))
+
+        ordered_raw_positions = dict(sorted(raw_positions.items(), key=lambda item: (item[0].rsplit('-', 1)[0], int(item[0].split("-")[-1]))))
+        return ordered_raw_positions
+
     def mergePositionsByHistory(self, raw_positions):
         """Merge positions which are part of same user history.
         When user transfers his LP tokens to i.e. MasterChef, position is marked as closed. However,
@@ -227,6 +256,7 @@ class PositionHandler:
 
             ## write stats
             position_stats[pos_id] = {
+                'market': pos_id.split("-")[1],
                 'account': pos_id.split("-")[0],
                 'position_start_block': position_start_block,
                 'position_end_block': position_end_block,
@@ -260,6 +290,7 @@ class PositionHandler:
 
         f = open(filename, "w")
         writer = csv.DictWriter(f, fieldnames=[
+                'market',
                 'account',
                 'position_start_block',
                 'position_end_block',
