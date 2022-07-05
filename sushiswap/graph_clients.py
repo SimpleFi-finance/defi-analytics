@@ -145,8 +145,9 @@ class SushiswapFarmsClient(GraphClient):
             if not pool_address in farms: continue
 
             # Filter by input token for the farm which is a LP token of an exchange pool
-            farm_address = farms[pool_address]
-            farm_transactions_for_account = list(filter(lambda x: x["marketId"] == farm_address, farm_transactions[account_address]))
+            farm_id = farms[pool_address]
+            farm_address = farm_id.split("-")[0]
+            farm_transactions_for_account = list(filter(lambda x: x["marketId"] == farm_id, farm_transactions[account_address]))
 
             if not farm_transactions_for_account: continue
 
