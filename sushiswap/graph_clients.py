@@ -125,7 +125,7 @@ class SushiswapFarmsClient(GraphClient):
                 for positionSnapshot in position['history']:
                     tx = positionSnapshot['transaction']
                     tx["blockNumber"] = int(tx["blockNumber"])
-                    tx["marketId"] = position["id"].split("-")[1]
+                    tx["marketId"] = "-".join(position["id"].split("-")[1:3])
                     raw_positions[position['accountAddress']].append(tx)
             
             lastID = response['positions'][-1]['id']
