@@ -106,7 +106,7 @@ def collect_data_for_all_pools():
     print("Farm transactions for merged positions: {0}".format(len(farm_transactions)))
 
     print("Calculating profitability...")
-    profitability_stats = position_handler.calculateProfitabilityOfPositions(merged_positions, [])
+    profitability_stats = position_handler.calculateProfitabilityOfPositions(merged_positions, farm_transactions)
     print("Profitability stats ready")
 
     filename = "stats/all-positions.csv"

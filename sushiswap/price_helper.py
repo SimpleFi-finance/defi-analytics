@@ -203,6 +203,10 @@ class PriceProvider:
         vars = {"id": token_address}
         response = self._client.execute(query, variable_values=vars)
 
+        if response['token'] == None:
+            self._decimals[token_address] = None
+            return None
+
         num_of_decimals = response['token']['decimals']
         self._decimals[token_address] = num_of_decimals
 

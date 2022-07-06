@@ -203,7 +203,13 @@ class SushiswapFarmsClient(GraphClient):
     def parseTokenBalance(self, tokenBalance):
         parts = tokenBalance.split("|")
         token = parts[0]
-        amount = int(parts[2]) * pow(10, (-1) * price_provider.decimals(token))
+        decimals = price_provider.decimals(token)
+        if decimals == None:
+            return {
+                "token": token,
+                "amount": 0
+            }
+        amount = int(parts[2]) * pow(10, (-1) * decimals)
         return {
           "token": token,
           "amount": amount
