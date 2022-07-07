@@ -82,13 +82,13 @@ class PriceProvider:
         blocks = sorted(set(blocks))
         snapshots = {}
         query = self._load_query('queries/pair_reserves_blocks.graphql')
-        firstSnapshot = {}
+        firstSnapshot = None
         n = 100
 
         for i in range(0, len(blocks), n):
             vars = {"market": market, "blocks": blocks[i:i+n]}
             response = self._client.execute(query, variable_values=vars)
-            if i == 0:
+            if response["marketSnapshots"] and firstSnapshot == None:
                 firstSnapshot = response["marketSnapshots"][0]
             for snapshot in response["marketSnapshots"]:
                 snapshots[int(snapshot["blockNumber"])] = snapshot
