@@ -6,6 +6,7 @@ from datetime import datetime
 import time
 
 WETH = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+MASTERCHEFS = ["0xc2edad668740f1aa35e4d8f227fb8e17dca888cd", "0xef0881ec094552b2e128cf945ef17a6752b4ec5d"]
 
 class PositionHandler:
 
@@ -116,8 +117,9 @@ class PositionHandler:
             if processed_positions.get(position_id) == True:
                 continue
 
-            first_tx = raw_positions[position_id][0]
-            last_tx = raw_positions[position_id][-1]
+            txs = raw_positions[position_id]
+            first_tx = txs[0]
+            last_tx = txs[-1]
 
             # first TX has to be of type INVEST
             if first_tx['transactionType'] != "INVEST":
@@ -125,12 +127,20 @@ class PositionHandler:
 
             # if last TX is REDEEM then position is completed
             if last_tx['transactionType'] == "REDEEM":
+                # skip positions where LP tokens were transferred out somewhere else then masterchef 
+                if any((tx['transactionType'] == "TRANSFER_OUT" and tx["transferredTo"] not in MASTERCHEFS) for tx in txs):
+                    continue
+
+               # skip positions where LP tokens were transferred in from somewhere else then masterchef 
+                if any((tx['transactionType'] == "TRANSFER_IN" and tx["transferredFrom"] not in MASTERCHEFS) for tx in txs):
+                    continue
+
                 merged_positions[position_id] = raw_positions[position_id]
                 processed_positions[position_id] = True
                 continue
 
-            # if last TX is TRANSFER_OUT then search for subsequent TXs (by ID) to make position complete
-            if last_tx['transactionType'] == "TRANSFER_OUT":
+            # if last TX is TRANSFER_OUT (to masterchef) then search for subsequent TXs (by ID) to make position complete
+            if last_tx['transactionType'] == "TRANSFER_OUT" and last_tx["transferredTo"] in MASTERCHEFS:
                 expanded_position = raw_positions[position_id]
                 expanded_position_complete = False
 
@@ -215,8 +225,8 @@ class PositionHandler:
             ## get position start/end info
             position_start_block, position_end_block, position_start_date, position_end_date = self._getPositionTimestamps(txs)
 
-            # don't handle one TX position opening/closing
-            if position_start_block == position_end_block:
+            # it's mostly contracts opening/closing positions in same day so skip it
+            if position_start_date == position_end_date:
                 continue
 
             ## sum all investments
