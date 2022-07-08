@@ -5,12 +5,36 @@ from price_helper import PriceProvider
 from datetime import datetime
 import time
 
+WETH = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+
 class PositionHandler:
 
     def __init__(self, endpoint):
         self._subgraph_endpoint = endpoint
         transport = AIOHTTPTransport(url=endpoint)
         self._client = Client(transport=transport, fetch_schema_from_transport=True, execute_timeout=120)
+
+    def getAllEthMarkets(self):
+        """Fetch all markets (Sushiswap pairs) where one input token is WETH.
+        """
+
+        markets = {}
+        lastID = ""
+
+        while True:
+            vars = {"lastID": lastID}
+            query = self._load_query('queries/get_all_eth_markets.graphql')
+            response = self._client.execute(query, variable_values=vars)
+            if not response['markets']:
+                break
+
+            for market in response['markets']:
+                markets[market['id']] = True
+
+            lastID = response['markets'][-1]['id']
+            print("Processed markets:", len(response["markets"]))
+
+        return markets
 
     def getRawClosedPositions(self, market):
         """Fetch closed positions from the Sushiswap subgraph.
@@ -42,9 +66,11 @@ class PositionHandler:
         return ordered_raw_positions
 
     def getAllRawClosedPositions(self):
-        """Fetch all closed positions from the Sushiswap subgraph, in all markets.
+        """Fetch all closed positions from the Sushiswap subgraph, in ETH markets.
         Return a dictionary where key is position ID and value list of TXs.
         """
+        eth_markets = self.getAllEthMarkets()
+        print("Found {0} ETH markets".format(len(eth_markets)))
 
         raw_positions = {}
         lastID = ""
@@ -67,8 +93,12 @@ class PositionHandler:
             lastID = response['positions'][-1]['id']
             print("Processed positions:", len(raw_positions))
 
-        ordered_raw_positions = dict(sorted(raw_positions.items(), key=lambda item: (item[0].rsplit('-', 1)[0], int(item[0].split("-")[-1]))))
-        return ordered_raw_positions
+        raw_positions_in_weth_markets = {k:v for (k,v) in raw_positions.items() if k.split('-')[1] in eth_markets.keys()}
+        print("All positions: ", len(raw_positions))
+        print("Positions in WETH markets: ", len(raw_positions_in_weth_markets))
+
+        ordered_raw_positions_in_weth_markets = dict(sorted(raw_positions_in_weth_markets.items(), key=lambda item: (item[0].rsplit('-', 1)[0], int(item[0].split("-")[-1]))))
+        return ordered_raw_positions_in_weth_markets
 
     def mergePositionsByHistory(self, raw_positions):
         """Merge positions which are part of same user history.
@@ -136,7 +166,6 @@ class PositionHandler:
         
         return merged_positions
 
-
     def filterOutPositionsWithMultipleInvestsOrRedeems(self, positions):
         """Return positions which have 1 Invest and 1 Redeem TX """
 
@@ -152,7 +181,7 @@ class PositionHandler:
         return filtered_positions
 
     
-    def calculateProfitabilityOfPositions(self, positions, farm_transactions):
+    def calculateProfitabilityOfPoolPositions(self, positions, farm_transactions):
         """Return dict of position profitability stats.
         For every position calculate net gains, ROI gains and pool vs HODL. difference.
         """
@@ -167,77 +196,38 @@ class PositionHandler:
             txs = positions[pos_id]
             blocks.update([tx['blockNumber'] for tx in txs if tx['transactionType'] == 'INVEST' or tx['transactionType'] == 'REDEEM'])
 
+        ## collect ETH prices
+        prices = {}
+        prices[WETH] = price_provider.getEthPriceinUSDForBlocks(blocks)
+
         ## extract input tokens
         tokenA = positions[list(positions.keys())[0]][0]['inputTokenAmounts'][0].split("|")[0]
         tokenB = positions[list(positions.keys())[0]][0]['inputTokenAmounts'][1].split("|")[0]
 
-        ## collect prices
-        prices = {}
-        prices[tokenA] = price_provider.getTokenPriceinUSDForBlocks(tokenA, blocks)
-        prices[tokenB] = price_provider.getTokenPriceinUSDForBlocks(tokenB, blocks)
+        ## collect prices for tokenA, tokenB
+        prices[tokenA] = price_provider.getTokenPriceinUSDForBlocks(tokenA, blocks, prices[WETH])
+        prices[tokenB] = price_provider.getTokenPriceinUSDForBlocks(tokenB, blocks, prices[WETH])
 
         ## do calcs for every position
         for pos_id in positions.keys():
             txs = positions[pos_id]
 
-            position_start_block = txs[0]['blockNumber']
-            position_end_block = txs[-1]['blockNumber']
-            start_timestamp = int(txs[0]['timestamp'])
-            position_start_date = datetime.strftime(datetime.fromtimestamp(start_timestamp), '%Y-%m-%d')
-            end_timestamp = int(txs[-1]['timestamp'])
-            position_end_date = datetime.strftime(datetime.fromtimestamp(end_timestamp), '%Y-%m-%d')
+            ## get position start/end info
+            position_start_block, position_end_block, position_start_date, position_end_date = self._getPositionTimestamps(txs)
 
             # don't handle one TX position opening/closing
             if position_start_block == position_end_block:
                 continue
 
             ## sum all investments
-            position_investment_value = 0
-            investTXs = [tx for tx in txs if tx['transactionType'] == 'INVEST']
-
-            tokenA_total_amount_invested = 0
-            tokenB_total_amount_invested = 0
-            for tx in investTXs:
-                block = int(tx['blockNumber'])
-
-                tokenA_amount = int(tx['inputTokenAmounts'][0].split("|")[2]) * pow(10, (-1) * price_provider.decimals(tokenA))
-                tokenA_price = prices[tokenA][block]
-                if(tokenA_price == None):
-                    continue
-                position_investment_value += tokenA_amount * tokenA_price
-                tokenA_total_amount_invested += tokenA_amount
-
-                tokenB_amount = int(tx['inputTokenAmounts'][1].split("|")[2]) * pow(10, (-1) * price_provider.decimals(tokenB))
-                tokenB_price = prices[tokenB][block]
-                if(tokenB_price == None):
-                    continue
-                position_investment_value += tokenB_amount * tokenB_price
-                tokenB_total_amount_invested += tokenB_amount
+            position_investment_value, tokenA_total_amount_invested, tokenB_total_amount_invested = self._sumInvestments(
+                txs, prices, tokenA, tokenB, price_provider)
 
             ## sum all redemptions
-            redeemTXs = [tx for tx in txs if tx['transactionType'] == 'REDEEM']
-            position_redemption_value = 0
-
-            tokenA_price = 0
-            tokenB_price = 0
-            for tx in redeemTXs:
-                block = int(tx['blockNumber'])
-
-                tokenA_amount = int(tx['inputTokenAmounts'][0].split("|")[2]) * pow(10, (-1) * price_provider.decimals(tokenA))
-                tokenA_price = prices[tokenA][block]
-                if(tokenA_price == None):
-                    continue           
-                position_redemption_value += tokenA_amount * tokenA_price
-
-                tokenB_amount = int(tx['inputTokenAmounts'][1].split("|")[2]) * pow(10, (-1) * price_provider.decimals(tokenB))
-                tokenB_price = prices[tokenB][block]
-                if(tokenB_price == None):
-                    continue            
-                position_redemption_value += tokenB_amount * tokenB_price
-
+            position_redemption_value, tokenA_price, tokenB_price = self._sumRedemptions(
+                txs, prices, tokenA, tokenB, price_provider)
 
             ## calculate gains
-
             position_redemption_value_if_held = tokenA_total_amount_invested * tokenA_price + tokenB_total_amount_invested * tokenB_price
 
             pool_net_gain = position_redemption_value - position_investment_value
@@ -285,6 +275,112 @@ class PositionHandler:
         return position_stats
 
 
+    def calculateProfitabilityOfAllPositions(self, positions, farm_transactions):
+        """Return dict of position profitability stats.
+        For every position calculate net gains, ROI gains and pool vs HODL. difference.
+        """
+        start_time = time.time()
+
+        price_provider = PriceProvider()
+        position_stats = {}
+
+        ## collect all blocks
+        all_blocks = set()
+        for pos_id in positions.keys():
+            txs = positions[pos_id]
+            all_blocks.update([tx['blockNumber'] for tx in txs if tx['transactionType'] == 'INVEST' or tx['transactionType'] == 'REDEEM'])
+
+        ## collect ETH prices
+        print("Collect ETH prices")
+        prices = {}
+        prices[WETH] = price_provider.getEthPriceinUSDForBlocks(all_blocks)
+
+        ## do calcs for every position
+        for pos_id in positions.keys():
+            txs = positions[pos_id]
+
+            ## extract input tokens
+            tokenA = txs[0]['inputTokenAmounts'][0].split("|")[0]
+            tokenB = txs[0]['inputTokenAmounts'][1].split("|")[0]
+
+            ## get tokenA prices
+            if prices.get(tokenA) == None:
+                blocks = set()
+                for pos_id in positions.keys():
+                    txs = positions[pos_id]
+                    blocks.update([tx['blockNumber'] for tx in txs if tx['transactionType'] == 'INVEST' or tx['transactionType'] == 'REDEEM'])
+                prices[tokenA] = price_provider.getTokenPriceinUSDForBlocks(tokenA, blocks, prices[WETH])
+
+            ## get tokenB prices
+            if prices.get(tokenB) == None:
+                blocks = set()
+                for pos_id in positions.keys():
+                    txs = positions[pos_id]
+                    blocks.update([tx['blockNumber'] for tx in txs if tx['transactionType'] == 'INVEST' or tx['transactionType'] == 'REDEEM'])
+                prices[tokenB] = price_provider.getTokenPriceinUSDForBlocks(tokenB, blocks, prices[WETH])
+
+            ## get position start/end info
+            position_start_block, position_end_block, position_start_date, position_end_date = self._getPositionTimestamps(txs)
+
+            # don't handle one TX position opening/closing
+            if position_start_block == position_end_block:
+                continue
+
+            ## sum all investments
+            position_investment_value, tokenA_total_amount_invested, tokenB_total_amount_invested = self._sumInvestments(
+                txs, prices, tokenA, tokenB, price_provider)
+
+            ## sum all redemptions
+            position_redemption_value, tokenA_price, tokenB_price = self._sumRedemptions(
+                txs, prices, tokenA, tokenB, price_provider)
+
+            ## calculate gains
+            position_redemption_value_if_held = tokenA_total_amount_invested * tokenA_price + tokenB_total_amount_invested * tokenB_price
+
+            pool_net_gain = position_redemption_value - position_investment_value
+            hodl_net_gain = position_redemption_value_if_held - position_investment_value
+
+            pool_roi = pool_net_gain / position_investment_value
+            hodl_roi = hodl_net_gain / position_investment_value
+            pool_vs_hodl_roi = (position_redemption_value - position_redemption_value_if_held) / position_redemption_value_if_held
+
+            # Calculation total farm rewards
+            claimed_rewards_in_USD = 0
+            if pos_id in farm_transactions:
+                for farm_tx in farm_transactions[pos_id]:
+                    for reward in farm_tx["rewardTokenAmounts"]:
+                        claimed_rewards_in_USD = claimed_rewards_in_USD + reward["valueInUSD"]
+
+            ## write stats
+            position_stats[pos_id] = {
+                'market': pos_id.split("-")[1],
+                'account': pos_id.split("-")[0],
+                'position_start_block': position_start_block,
+                'position_end_block': position_end_block,
+                'position_start_date': position_start_date,
+                'position_end_date': position_end_date,
+                'tokenA': tokenA,
+                'tokenB': tokenB,
+                'position_investment_value': position_investment_value,
+                'position_redemption_value': position_redemption_value,
+                'position_redemption_value_if_held': position_redemption_value_if_held,
+                'pool_net_gain': pool_net_gain,
+                'hodl_net_gain': hodl_net_gain,
+                'pool_roi': pool_roi,
+                'hodl_roi': hodl_roi,
+                'pool_vs_hodl_roi': pool_vs_hodl_roi,
+                'claimed_rewards_in_USD': claimed_rewards_in_USD
+            }
+
+            if(len(position_stats.keys()) % 10 == 0):
+                print(len(position_stats.keys()))
+
+        end_time = time.time()
+
+        print("--- %s seconds ---" % (end_time - start_time))
+
+        return position_stats
+
     def writeProfitabilityStatsToCsv(self, stats, filename):
         """Write all the collected info to CSV file"""
 
@@ -314,7 +410,64 @@ class PositionHandler:
             writer.writerow(stats[position_id])
         f.close()
 
-
     def _load_query(self, path):
         with open(path) as f:
             return gql(f.read())
+
+    def _sumInvestments(self, txs, prices, tokenA, tokenB, price_provider):
+        position_investment_value = 0
+        investTXs = [tx for tx in txs if tx['transactionType'] == 'INVEST']
+
+        tokenA_total_amount_invested = 0
+        tokenB_total_amount_invested = 0
+        for tx in investTXs:
+            block = int(tx['blockNumber'])
+
+            tokenA_amount = int(tx['inputTokenAmounts'][0].split("|")[2]) * pow(10, (-1) * price_provider.decimals(tokenA))
+            tokenA_price = prices[tokenA][block]
+            if(tokenA_price == None):
+                continue
+            position_investment_value += tokenA_amount * tokenA_price
+            tokenA_total_amount_invested += tokenA_amount
+
+            tokenB_amount = int(tx['inputTokenAmounts'][1].split("|")[2]) * pow(10, (-1) * price_provider.decimals(tokenB))
+            tokenB_price = prices[tokenB][block]
+            if(tokenB_price == None):
+                continue
+            position_investment_value += tokenB_amount * tokenB_price
+            tokenB_total_amount_invested += tokenB_amount
+
+        return position_investment_value, tokenA_total_amount_invested, tokenB_total_amount_invested
+
+    def _sumRedemptions(self, txs, prices, tokenA, tokenB, price_provider):
+        redeemTXs = [tx for tx in txs if tx['transactionType'] == 'REDEEM']
+        position_redemption_value = 0
+
+        tokenA_price = 0
+        tokenB_price = 0
+        for tx in redeemTXs:
+            block = int(tx['blockNumber'])
+
+            tokenA_amount = int(tx['inputTokenAmounts'][0].split("|")[2]) * pow(10, (-1) * price_provider.decimals(tokenA))
+            tokenA_price = prices[tokenA][block]
+            if(tokenA_price == None):
+                continue
+            position_redemption_value += tokenA_amount * tokenA_price
+
+            tokenB_amount = int(tx['inputTokenAmounts'][1].split("|")[2]) * pow(10, (-1) * price_provider.decimals(tokenB))
+            tokenB_price = prices[tokenB][block]
+            if(tokenB_price == None):
+                continue
+            position_redemption_value += tokenB_amount * tokenB_price
+
+        return position_redemption_value, tokenA_price, tokenB_price
+
+    def _getPositionTimestamps(self, txs):
+        position_start_block = txs[0]['blockNumber']
+        position_end_block = txs[-1]['blockNumber']
+        start_timestamp = int(txs[0]['timestamp'])
+        position_start_date = datetime.strftime(datetime.fromtimestamp(start_timestamp), '%Y-%m-%d')
+        end_timestamp = int(txs[-1]['timestamp'])
+        position_end_date = datetime.strftime(datetime.fromtimestamp(end_timestamp), '%Y-%m-%d')
+
+        return position_start_block,position_end_block,position_start_date,position_end_date

@@ -3,6 +3,7 @@ from gql.transport.aiohttp import AIOHTTPTransport
 
 from price_helper import PriceProvider
 
+WETH = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
 
 price_provider = PriceProvider()
 
@@ -182,8 +183,9 @@ class SushiswapFarmsClient(GraphClient):
         
         # Fetch prices only once for all the blocks we need
         prices = {}
+        prices[WETH] = price_provider.getEthPriceinUSDForBlocks(blocks)
         for token in rewardTokens:
-            prices[token] = price_provider.getTokenPriceinUSDForBlocks(token, blocks)
+            prices[token] = price_provider.getTokenPriceinUSDForBlocks(token, blocks, prices[WETH])
         
         for position_id in transactions_with_prices.keys():
             transactions = []

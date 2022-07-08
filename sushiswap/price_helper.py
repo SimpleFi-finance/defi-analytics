@@ -106,6 +106,8 @@ class PriceProvider:
         """Calculate ETH price in USD for all blocks between given start and end block.
         Sushiswap subgraph is used to fetch WETH-USDC pool reserves.
         """
+        print("Collect ETH prices...")
+
         blocks = sorted(set(blocks))
         marketSnapshots = self.getMarketSnapshotsForBlocks(USDC_ETH_PAIR, blocks)
 
@@ -126,12 +128,15 @@ class PriceProvider:
           
         return eth_prices
 
-    def getTokenPriceinUSDForBlocks(self, token, blocks):
+    def getTokenPriceinUSDForBlocks(self, token, blocks, eth_prices):
         """Calculate custom token price in USD for all blocks between given start and end block.
         Sushiswap subgraph is used to fetch token reserves.
         """
         blocks = sorted(set(blocks))
-        eth_prices = self.getEthPriceinUSDForBlocks(blocks)
+
+        ## collect ETH prices if empty dict is provided
+        if len(eth_prices) == 0:
+            eth_prices = self.getEthPriceinUSDForBlocks(blocks)
         if token == WETH:
             return eth_prices
 
@@ -139,7 +144,10 @@ class PriceProvider:
 
         if weth_pair is None:
             #TODO use some other pair
+            print("WETH pair not found for token", token)
             return None
+
+        print("Collect", token, "prices...")
 
         marketSnapshots = self.getMarketSnapshotsForBlocks(weth_pair, blocks)
 
