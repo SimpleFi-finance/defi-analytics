@@ -82,13 +82,13 @@ class PriceProvider:
         blocks = sorted(set(blocks))
         snapshots = {}
         query = self._load_query('queries/pair_reserves_blocks.graphql')
-        firstSnapshot = {}
+        firstSnapshot = None
         n = 100
 
         for i in range(0, len(blocks), n):
             vars = {"market": market, "blocks": blocks[i:i+n]}
             response = self._client.execute(query, variable_values=vars)
-            if i == 0:
+            if response["marketSnapshots"] and firstSnapshot == None:
                 firstSnapshot = response["marketSnapshots"][0]
             for snapshot in response["marketSnapshots"]:
                 snapshots[int(snapshot["blockNumber"])] = snapshot
@@ -106,6 +106,8 @@ class PriceProvider:
         """Calculate ETH price in USD for all blocks between given start and end block.
         Sushiswap subgraph is used to fetch WETH-USDC pool reserves.
         """
+        print("Collect ETH prices...")
+
         blocks = sorted(set(blocks))
         marketSnapshots = self.getMarketSnapshotsForBlocks(USDC_ETH_PAIR, blocks)
 
@@ -126,12 +128,15 @@ class PriceProvider:
           
         return eth_prices
 
-    def getTokenPriceinUSDForBlocks(self, token, blocks):
+    def getTokenPriceinUSDForBlocks(self, token, blocks, eth_prices):
         """Calculate custom token price in USD for all blocks between given start and end block.
         Sushiswap subgraph is used to fetch token reserves.
         """
         blocks = sorted(set(blocks))
-        eth_prices = self.getEthPriceinUSDForBlocks(blocks)
+
+        ## collect ETH prices if empty dict is provided
+        if len(eth_prices) == 0:
+            eth_prices = self.getEthPriceinUSDForBlocks(blocks)
         if token == WETH:
             return eth_prices
 
@@ -139,7 +144,10 @@ class PriceProvider:
 
         if weth_pair is None:
             #TODO use some other pair
+            print("WETH pair not found for token", token)
             return None
+
+        print("Collect", token, "prices...")
 
         marketSnapshots = self.getMarketSnapshotsForBlocks(weth_pair, blocks)
 
@@ -202,6 +210,10 @@ class PriceProvider:
         query = self._load_query('queries/get_token_decimals.graphql')
         vars = {"id": token_address}
         response = self._client.execute(query, variable_values=vars)
+
+        if response['token'] == None:
+            self._decimals[token_address] = None
+            return None
 
         num_of_decimals = response['token']['decimals']
         self._decimals[token_address] = num_of_decimals

@@ -3,6 +3,7 @@ from gql.transport.aiohttp import AIOHTTPTransport
 
 from price_helper import PriceProvider
 
+WETH = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
 
 price_provider = PriceProvider()
 
@@ -79,6 +80,90 @@ class SushiswapFarmsClient(GraphClient):
 
         return farm_transactions_for_positions
     
+    # Fuctions for processing all farms together
+    def getAllMarkets(self,):
+        """Fetch all markets from the Sushiswap subgraph.
+        Return a dictionary where key is input token and value market id.
+        """
+        
+        markets = {}
+        lastID = ""
+
+        while True:
+            vars = {"lastID": lastID}
+            query = self._load_query('queries/get_all_markets.graphql')
+            response = self._client.execute(query, variable_values=vars)
+            if not response['markets']:
+                break
+
+            for market in response['markets']:
+                for input_token in market["inputTokens"]:
+                  markets[input_token["id"]] = market["id"]
+            
+            lastID = response['markets'][-1]['id']
+            print("Processed farm markets:", len(response["markets"]))
+        
+        return markets
+
+    # Two methods below assume that there is only one farm for every LP token
+    def getTransactionsOfAllClosedPositions(self):
+        """Fetch closed positions from the Sushiswap subgraph.
+        Return a dictionary where key is account address of position and value is list of TXs.
+        """
+        
+        raw_positions = {}
+        lastID = ""
+
+        while True:
+            vars = {"lastID": lastID}
+            query = self._load_query('queries/get_all_raw_closed_positions.graphql')
+            response = self._client.execute(query, variable_values=vars)
+            if not response['positions']:
+                break
+
+            for position in response['positions']:
+                if not position['accountAddress'] in raw_positions: raw_positions[position['accountAddress']] = []
+                for positionSnapshot in position['history']:
+                    tx = positionSnapshot['transaction']
+                    tx["blockNumber"] = int(tx["blockNumber"])
+                    tx["marketId"] = "-".join(position["id"].split("-")[1:3])
+                    raw_positions[position['accountAddress']].append(tx)
+            
+            lastID = response['positions'][-1]['id']
+            print("Processed farm positions:", len(raw_positions))
+        
+        return raw_positions
+
+    def getFarmTransactionsForAllPositions(self, farms, farm_transactions, pool_transactions):
+        farm_transactions_for_positions = {}
+
+        transaction_ids = []  # Required to avoid duplicate transactions 
+        for position_id in pool_transactions.keys():
+            account_address = pool_transactions[position_id][0]["accountAddress"]
+            if not account_address in farm_transactions: continue
+            
+            pool_address = position_id.split("-")[1]
+            if not pool_address in farms: continue
+
+            # Filter by input token for the farm which is a LP token of an exchange pool
+            farm_id = farms[pool_address]
+            farm_address = farm_id.split("-")[0]
+            farm_transactions_for_account = list(filter(lambda x: x["marketId"] == farm_id, farm_transactions[account_address]))
+
+            if not farm_transactions_for_account: continue
+
+            for tx in pool_transactions[position_id]:
+                if (tx["transactionType"] == "TRANSFER_OUT" and tx["transferredTo"] == farm_address) or (tx["transactionType"] == "TRANSFER_IN" and tx["transferredFrom"] == farm_address):
+                    transactions = list(filter(lambda x: x["transactionHash"] == tx["transactionHash"], farm_transactions_for_account))
+                    if transactions:
+                        if not position_id in farm_transactions_for_positions: farm_transactions_for_positions[position_id] = []
+                        for transaction in transactions:
+                            if not transaction["id"] in transaction_ids:
+                                farm_transactions_for_positions[position_id].append(transaction)
+                                transaction_ids.append(transaction["id"])
+
+        return farm_transactions_for_positions
+    
     def addRewardValueInUSD(self, farm_transactions):
         blocks = []
         rewardTokens = []
@@ -98,8 +183,9 @@ class SushiswapFarmsClient(GraphClient):
         
         # Fetch prices only once for all the blocks we need
         prices = {}
+        prices[WETH] = price_provider.getEthPriceinUSDForBlocks(blocks)
         for token in rewardTokens:
-            prices[token] = price_provider.getTokenPriceinUSDForBlocks(token, blocks)
+            prices[token] = price_provider.getTokenPriceinUSDForBlocks(token, blocks, prices[WETH])
         
         for position_id in transactions_with_prices.keys():
             transactions = []
@@ -119,7 +205,13 @@ class SushiswapFarmsClient(GraphClient):
     def parseTokenBalance(self, tokenBalance):
         parts = tokenBalance.split("|")
         token = parts[0]
-        amount = int(parts[2]) * pow(10, (-1) * price_provider.decimals(token))
+        decimals = price_provider.decimals(token)
+        if decimals == None:
+            return {
+                "token": token,
+                "amount": 0
+            }
+        amount = int(parts[2]) * pow(10, (-1) * decimals)
         return {
           "token": token,
           "amount": amount
