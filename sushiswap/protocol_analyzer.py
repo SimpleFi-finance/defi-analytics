@@ -59,24 +59,22 @@ ax.set_title('Sushiswap position profitability including rewards', fontweight='b
 ax
 
 # %%
+# Plot bar chart of mean pool_vs_hodl_roi per pool
 pd.set_option('display.float_format', '{:.2f}'.format)
-net_gains = df[['market', 'pool_vs_hodl_roi']]
-net_gains_mean = net_gains.groupby(['market']).mean()
-ax = net_gains_mean.plot.bar(rot=90)
+pool_vs_hodl = df[['market', 'pool_vs_hodl_roi']]
+pool_vs_hodl_mean = pool_vs_hodl.groupby(['market']).mean()
+ax = pool_vs_hodl_mean.plot.bar(rot=90)
 
 ax.set_title('Average pool_vs_hodl_roi per pool', fontweight='bold', color= 'yellow');
 ax.tick_params(colors='yellow', which='both')
-# ax.set_xticklabels(net_gains['market'], rotation=90, ha='right')
 ax
 
-
 # %%
-# FILE_NAME = "usdc-weth.csv"
+# Plot bar chart of mean pool_net_gain per pool
+net_gains = df[['market', 'pool_net_gain']]
+net_gains_mean = net_gains.groupby(['market']).mean()
+ax = net_gains_mean.plot.bar(rot=90)
 
-# usdc_weth_df = pd.read_csv("stats/" + FILE_NAME, parse_dates=["position_end_date", "position_start_date"])
-# usdc_weth_df = usdc_weth_df[usdc_weth_df["position_investment_value"] > 100]
-# usdc_weth_df = usdc_weth_df[usdc_weth_df["position_redemption_value"] > 100] 
-# usdc_weth_df = usdc_weth_df[usdc_weth_df["position_start_date"] != usdc_weth_df["position_end_date"]] 
-# usdc_weth_df.sort_values(by='pool_net_gain').head(10)
-
-# %%
+ax.set_title('Average net gain per pool', fontweight='bold', color= 'yellow');
+ax.tick_params(colors='yellow', which='both')
+ax
