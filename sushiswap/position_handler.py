@@ -352,7 +352,7 @@ class PositionHandler:
 
             pool_roi = pool_net_gain / position_investment_value
             hodl_roi = hodl_net_gain / position_investment_value
-            pool_vs_hodl_roi = (position_redemption_value - position_redemption_value_if_held) / position_redemption_value_if_held
+            pool_vs_hodl_roi = pool_roi - hodl_roi
 
             # Calculation total farm rewards
             claimed_rewards_in_USD = 0

@@ -30,6 +30,8 @@ class SushiswapFarmsClient(GraphClient):
 
     def getMarketForLPToken(self, lpToken):
       response = self.runQuery("queries/get_farm_for_lp_token.graphql", {"lpToken": lpToken})
+      if response["markets"] == None or len(response["markets"]) == 0:
+        return None
       return response["markets"][0]["id"]
 
     def getTransactionsOfClosedPositions(self, marketId):
