@@ -30,6 +30,32 @@ ax.legend(loc='lower right')
 ax.set_title(PAIR_NAME + ' profitability vs HODL', fontweight='bold', color= 'yellow');
 ax
 
+
+# %%
+# Plot ratio of profitable/non-profitable positions vs HODL including rewards
+df['total_roi_vs_hodl_roi'] = df['pool_vs_hodl_roi'] + df['claimed_rewards_in_USD']/df['position_redemption_value_if_held']
+
+total_profitability = df['total_roi_vs_hodl_roi'].agg(
+    profitable_positions = lambda s: s.gt(0).sum(),
+    non_profitable_positions = lambda s: s.lt(0).sum()
+)
+
+ax = total_profitability.plot(
+    kind='pie',
+    legend=True,
+    labeldistance=None,
+    ylabel='',
+    labels=['Outperformed HODL', 'Underperformed HODL'],
+    autopct='%1.1f%%',
+    explode=[0.05, 0.05],
+    colors = ['green', 'red'],
+    shadow=True,
+    )
+ax.legend(loc='lower right')
+ax.set_title(PAIR_NAME + ' profitability vs HODL including rewards', fontweight='bold', color= 'yellow');
+ax
+
+
 # %%
 # Plot ratio of profitable/non-profitable positions vs USD
 pool_vs_usd_roi_profitability = df['pool_roi'].agg(
@@ -53,12 +79,10 @@ ax.set_title(PAIR_NAME + ' profitability vs USD', fontweight='bold', color= 'yel
 ax
 
 # %%
-# Plot ratio of profitable/non-profitable positions, including rewards, compared to HODL
+# Plot ratio of profitable/non-profitable positions vs USD including rewards
+df['total_pool_net_gain'] = df['pool_net_gain'] + df['claimed_rewards_in_USD']
 
-df['total_roi'] = df['pool_net_gain'] + df['claimed_rewards_in_USD']
-df['total_roi_vs_hodl_roi'] = df['pool_vs_hodl_roi'] + df['claimed_rewards_in_USD']/df['position_redemption_value_if_held']
-
-total_profitability = df['total_roi_vs_hodl_roi'].agg(
+total_profitability = df['total_pool_net_gain'].agg(
     profitable_positions = lambda s: s.gt(0).sum(),
     non_profitable_positions = lambda s: s.lt(0).sum()
 )
@@ -68,16 +92,15 @@ ax = total_profitability.plot(
     legend=True,
     labeldistance=None,
     ylabel='',
-    labels=['Outperformed HODL', 'Underperformed HODL'],
+    labels=['Outperformed USD', 'Underperformed USD'],
     autopct='%1.1f%%',
     explode=[0.05, 0.05],
     colors = ['green', 'red'],
     shadow=True,
     )
 ax.legend(loc='lower right')
-ax.set_title(PAIR_NAME + ' position profitability including rewards', fontweight='bold', color= 'yellow');
+ax.set_title(PAIR_NAME + ' profitability vs USD including rewards', fontweight='bold', color= 'yellow');
 ax
-
 
 # %%
 # Plot histogram for position closing times
