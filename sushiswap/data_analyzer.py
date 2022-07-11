@@ -2,8 +2,8 @@
 # Load position data
 import pandas as pd
 
-PAIR_NAME = "SUSHI-WETH"
-FILE_NAME = "sushi-weth.csv"
+PAIR_NAME = "TOP20"
+FILE_NAME = "combined.csv"
 
 df = pd.read_csv("stats/" + FILE_NAME, parse_dates=["position_end_date", "position_start_date"])
 df.head(10)
@@ -27,7 +27,29 @@ ax = pool_vs_hodl_roi_profitability.plot(
     shadow=True,
     )
 ax.legend(loc='lower right')
-ax.set_title(PAIR_NAME + ' position profitability', fontweight='bold', color= 'yellow');
+ax.set_title(PAIR_NAME + ' profitability vs HODL', fontweight='bold', color= 'yellow');
+ax
+
+# %%
+# Plot ratio of profitable/non-profitable positions vs USD
+pool_vs_usd_roi_profitability = df['pool_roi'].agg(
+    profitable_positions = lambda s: s.gt(0).sum(),
+    non_profitable_positions = lambda s: s.lt(0).sum()
+)
+
+ax = pool_vs_usd_roi_profitability.plot(
+    kind='pie',
+    legend=True,
+    labeldistance=None,
+    ylabel='',
+    labels=['Outperformed USD', 'Underperformed USD'],
+    autopct='%1.1f%%',
+    explode=[0.05, 0.05],
+    colors = ['green', 'red'],
+    shadow=True,
+    )
+ax.legend(loc='lower right')
+ax.set_title(PAIR_NAME + ' profitability vs USD', fontweight='bold', color= 'yellow');
 ax
 
 # %%
@@ -56,6 +78,7 @@ ax.legend(loc='lower right')
 ax.set_title(PAIR_NAME + ' position profitability including rewards', fontweight='bold', color= 'yellow');
 ax
 
+
 # %%
 # Plot histogram for position closing times
 def get_h_for_block(block):
@@ -67,7 +90,7 @@ def get_h_for_block(block):
         return '2021 H1'
     elif block >= 12738509 and block < 13916166:
         return '2021 H2'
-    elif block >= 13916166:
+    elif block >= 13916166 and block < 15053287:
         # TODO update when H1 is finished
         return '2022 H1'
 
