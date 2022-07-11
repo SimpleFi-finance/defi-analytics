@@ -5,7 +5,6 @@ import os.path
 SUSHISWAP_ENDPOINT = "https://api.thegraph.com/subgraphs/name/simplefi-finance/sushiswap"
 SUSHISWAP_FARMS_ENDPOINT = "https://api.thegraph.com/subgraphs/name/simplefi-finance/sushiswap-farms"
 
-
 pools = {}
 pools["DAI_WETH"] = "0xc3d03e4f041fd4cd388c549ee2a29a9e5075882f"
 pools['LDO_WETH']= "0xc558f600b34a5f69dd2f0d06cb8a88d829b7420a"
@@ -37,9 +36,10 @@ pools['SPELL_WETH'] = "0xb5de0c3753b6e1b4dba616db82767f17513e6d4e"
 pools['BOND_WETH'] = "0x613c836df6695c10f0f4900528b6931441ac5d5a"
 pools['REN_WETH'] = "0x611cde65dea90918c0078ac0400a72b0d25b9bb1"
 pools['CREAM_WETH'] = "0xf169cea51eb51774cf107c88309717dda20be167"
-
-
-
+pools['CVX_WETH'] = "0x05767d9ef41dc40689678ffca0608878fb3de906"
+pools['SNX_WETH'] = "0xa1d7b2d891e3a1f9ef4bbc5be20630c2feb1c470"
+pools['MKR_WETH'] = "0xba13afecda9beb75de5c56bbaf696b880a5a50dd"
+pools['UNI_WETH'] = "0xdafd66636e2561b0284edde37e42d192f2844d40"
 
 
 def collect_data_for(pool, filename):
@@ -170,7 +170,50 @@ def collect_top_20_by_trading_volume():
         if os.path.isfile(filename):
             continue
 
+        collect_data_for(pools[p], filename)
+
+
+def collect_defi_pools():
+    protocols = [
+        'CRV_WETH',
+        'SUSHI_WETH',
+        'YFI_WETH',
+        'AAVE_WETH',
+        'COMP_WETH',
+        'CVX_WETH',
+        'SNX_WETH',
+        'MKR_WETH',
+        'UNI_WETH'
+    ]
+
+    for p in protocols:
+        print("\nCollecting data for " + p + "...")
+        filename = "defi-pools-stats/" + p + ".csv"
+
+        # if data exists don't collect it again
+        if os.path.isfile(filename):
+            continue
+
         collect_data_for(pools[p], filename) 
+
+
+def collect_stablecoin_pools():
+    protocols = [
+        'USDC_WETH',
+        'USDT_WETH',
+        'DAI_WETH',
+    ]
+
+    for p in protocols:
+        print("\nCollecting data for " + p + "...")
+        filename = "stablecoin-pools-stats/" + p + ".csv"
+
+        # if data exists don't collect it again
+        if os.path.isfile(filename):
+            continue
+
+        collect_data_for(pools[p], filename) 
+
 
 def main():
     # collect_data_for_dai_weth()
@@ -193,8 +236,10 @@ def main():
     # collect_data_for_punk_weth()
 
     # collect_top_20_by_tvl()
-    collect_top_20_by_trading_volume()
-    
+    # collect_top_20_by_trading_volume()
+    collect_defi_pools()
+    # collect_stablecoin_pools()
+
     # collect_data_for_alls()
 
 if __name__ == "__main__":
