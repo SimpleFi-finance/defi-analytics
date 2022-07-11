@@ -2,7 +2,7 @@
 # Load position data
 import pandas as pd
 
-PAIR_NAME = "TOP20"
+DATASET_NAME = "TOP20"
 FILE_NAME = "combined.csv"
 
 df = pd.read_csv("stats/" + FILE_NAME, parse_dates=["position_end_date", "position_start_date"])
@@ -27,15 +27,15 @@ ax = pool_vs_hodl_roi_profitability.plot(
     shadow=True,
     )
 ax.legend(loc='lower right')
-ax.set_title(PAIR_NAME + ' profitability vs HODL', fontweight='bold', color= 'yellow');
+ax.set_title(DATASET_NAME + ' profitability vs HODL', fontweight='bold', color= 'yellow');
 ax
 
 
 # %%
 # Plot ratio of profitable/non-profitable positions vs HODL including rewards
-df['total_roi_vs_hodl_roi'] = df['pool_vs_hodl_roi'] + df['claimed_rewards_in_USD']/df['position_redemption_value_if_held']
+df['total_roi_vs_hodl'] = df['pool_vs_hodl_roi'] + df['claimed_rewards_in_USD']/df['position_redemption_value_if_held']
 
-total_profitability = df['total_roi_vs_hodl_roi'].agg(
+total_profitability = df['total_roi_vs_hodl'].agg(
     profitable_positions = lambda s: s.gt(0).sum(),
     non_profitable_positions = lambda s: s.lt(0).sum()
 )
@@ -52,7 +52,7 @@ ax = total_profitability.plot(
     shadow=True,
     )
 ax.legend(loc='lower right')
-ax.set_title(PAIR_NAME + ' profitability vs HODL including rewards', fontweight='bold', color= 'yellow');
+ax.set_title(DATASET_NAME + ' profitability vs HODL including rewards', fontweight='bold', color= 'yellow');
 ax
 
 
@@ -75,7 +75,7 @@ ax = pool_vs_usd_roi_profitability.plot(
     shadow=True,
     )
 ax.legend(loc='lower right')
-ax.set_title(PAIR_NAME + ' profitability vs USD', fontweight='bold', color= 'yellow');
+ax.set_title(DATASET_NAME + ' profitability vs USD', fontweight='bold', color= 'yellow');
 ax
 
 # %%
@@ -99,7 +99,7 @@ ax = total_profitability.plot(
     shadow=True,
     )
 ax.legend(loc='lower right')
-ax.set_title(PAIR_NAME + ' profitability vs USD including rewards', fontweight='bold', color= 'yellow');
+ax.set_title(DATASET_NAME + ' profitability vs USD including rewards', fontweight='bold', color= 'yellow');
 ax
 
 # %%
@@ -124,7 +124,7 @@ agg_stats = df.groupby('time_ranges')['is_profitable'].agg(Total='count', Profit
 ax = agg_stats.plot(
     kind='bar',
 )
-ax.set_title('Number of closed positions in ' + PAIR_NAME, fontweight='bold', color= 'yellow');
+ax.set_title('Number of closed positions in ' + DATASET_NAME, fontweight='bold', color= 'yellow');
 ax.tick_params(colors='yellow', which='both', rotation='auto')
 ax
 
@@ -137,11 +137,9 @@ def remove_outliers(df, column_name):
 
 filtered_df = remove_outliers(df, 'pool_roi')
 pd.set_option('display.float_format', '{:.6f}'.format)
-filtered_df["pool_roi"].describe()
 
-# filtered_df['pool_roi'].describe()
 ax = filtered_df["pool_roi"].plot(kind='hist', bins=100)
-ax.set_title('Distribution of returns for ' + PAIR_NAME, fontweight='bold', color= 'yellow');
+ax.set_title('Distribution of returns for ' + DATASET_NAME, fontweight='bold', color= 'yellow');
 ax.tick_params(colors='yellow', which='both', rotation='auto')
 ax
 
@@ -149,7 +147,7 @@ ax
 # Plot correlation between pool ROIs and position closing date
 filtered_df.sort_values(by=['position_end_date'], inplace=True)
 ax = filtered_df.plot.scatter(x='position_end_date', y='pool_roi', s=5)
-ax.set_title('Scatter position closing dates ' + PAIR_NAME, fontweight='bold', color= 'yellow');
+ax.set_title('Scatter position closing dates ' + DATASET_NAME, fontweight='bold', color= 'yellow');
 ax.tick_params(colors='yellow', which='both', rotation='auto')
 num_of_ticks = round(len(filtered_df['position_end_date'].index)/10)
 labels = filtered_df['position_end_date'][::num_of_ticks]
@@ -160,7 +158,7 @@ ax
 # Plot correlation between pool ROIs and position opening date
 filtered_df.sort_values(by=['position_start_date'], inplace=True)
 ax = filtered_df.plot.scatter(x='position_start_date', y='pool_roi', s=5)
-ax.set_title('Scatter position opening dates ' + PAIR_NAME, fontweight='bold', color= 'yellow');
+ax.set_title('Scatter position opening dates ' + DATASET_NAME, fontweight='bold', color= 'yellow');
 ax.tick_params(colors='yellow', which='both', rotation='auto')
 labels = filtered_df['position_start_date'][::num_of_ticks]
 ax.set_xticklabels(labels.dt.date, rotation=30, ha='right')
