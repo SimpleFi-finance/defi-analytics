@@ -2,10 +2,10 @@
 # Load position data
 import pandas as pd
 
-DATASET_NAME = "Top-DeFi"
+DATASET_NAME = "stablecoin-pairs"
 
-FOLDER = "defi-pools-stats/"
-FILE_NAME = FOLDER + "defi-combined.csv"
+FOLDER = "stablecoin-pools-stats/"
+FILE_NAME = FOLDER + "stablecoin-pool-combined.csv"
 PLOTS = FOLDER + "plots/"
 
 df = pd.read_csv(FILE_NAME, parse_dates=["position_end_date", "position_start_date"])
