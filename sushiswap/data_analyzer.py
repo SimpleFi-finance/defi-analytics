@@ -2,10 +2,10 @@
 # Load position data
 import pandas as pd
 
-DATASET_NAME = "TOP20"
-FILE_NAME = "combined.csv"
+DATASET_NAME = "TOP20-TVL"
+FILE_NAME = "top20-tvl-stats/top20-tvl-combined.csv"
 
-df = pd.read_csv("stats/" + FILE_NAME, parse_dates=["position_end_date", "position_start_date"])
+df = pd.read_csv(FILE_NAME, parse_dates=["position_end_date", "position_start_date"])
 df.head(10)
 
 # %%
@@ -128,8 +128,35 @@ ax.set_title('Number of closed positions in ' + DATASET_NAME, fontweight='bold',
 ax.tick_params(colors='yellow', which='both', rotation='auto')
 ax
 
+
 # %%
-# Describe returns
+# Plot winners, losers and inbetweeners
+df['time_ranges'] = df['position_end_block'].apply(lambda x: get_h_for_block(x)).sort_values()
+df['profitability_group'] = df['total_roi_vs_hodl'].apply(
+    lambda x: 'winner' if x > 1 else ('loser' if x < -0.7 else 'inbetweener'))
+
+groups = df.groupby('profitability_group')['profitability_group'].count()
+
+# agg_stats = df.groupby('time_ranges')['is_profitable'].agg(Total='count', Profitable='sum')
+
+ax = groups.plot(
+    kind='pie',
+    legend=True,
+    labeldistance=None,
+    ylabel='',
+    labels=['inbetween', 'ROI < -70%', 'ROI > 100%'],
+    autopct='%1.1f%%',
+    explode=[0.05, 0.05, 0.05],
+    colors = ['pink', 'red', 'green'],
+    shadow=True,
+    )
+ax.legend(loc='lower right')
+ax.set_title(DATASET_NAME + ' performance groups', fontweight='bold', color= 'yellow');
+ax
+
+
+# %%
+# Describe returns by plotting ROI distribution
 def remove_outliers(df, column_name):
     q_low = df[column_name].quantile(0.01)
     q_hi  = df[column_name].quantile(0.95)
@@ -164,5 +191,11 @@ labels = filtered_df['position_start_date'][::num_of_ticks]
 ax.set_xticklabels(labels.dt.date, rotation=30, ha='right')
 ax
 
+
+# %%
+# Get top 20 most profitable accounts
+df_by_account = df.groupby('account')['total_pool_net_gain'].sum().reset_index(name ='total_pool_net_gain')
+df_by_account.sort_values(by=['total_pool_net_gain'], inplace=True)
+df_by_account
 
 # %%
