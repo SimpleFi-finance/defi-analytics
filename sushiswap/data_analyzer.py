@@ -2,10 +2,10 @@
 # Load position data
 import pandas as pd
 
-DATASET_NAME = "TOP20-volume"
+DATASET_NAME = "Top-DeFi"
 
-FOLDER = "top20-volume-stats/"
-FILE_NAME = FOLDER + "top20-volume-combined.csv"
+FOLDER = "defi-pools-stats/"
+FILE_NAME = FOLDER + "defi-combined.csv"
 PLOTS = FOLDER + "plots/"
 
 df = pd.read_csv(FILE_NAME, parse_dates=["position_end_date", "position_start_date"])
@@ -110,7 +110,7 @@ ax = total_profitability.plot(
     )
 ax.legend(loc='lower right')
 ax.set_title(DATASET_NAME + ' profitability vs USD including rewards', fontweight='bold', color= 'yellow');
-ax.figure.savefig(PLOTS + DATASET_NAME + "-profitability_vs_hodl_with_rewards")
+ax.figure.savefig(PLOTS + DATASET_NAME + "-profitability_vs_usd_with_rewards")
 ax
 
 # %%
@@ -188,7 +188,7 @@ ax
 # Plot correlation between pool ROIs and position closing date
 filtered_df.sort_values(by=['position_end_date'], inplace=True)
 ax = filtered_df.plot.scatter(figsize=(10,7), x='position_end_date', y='pool_roi', s=5)
-ax.set_title('Scatter position closing dates ' + DATASET_NAME, fontweight='bold', color= 'yellow');
+ax.set_title(DATASET_NAME + ': Scatter position closing dates ', fontweight='bold', color= 'yellow');
 ax.tick_params(colors='yellow', which='both', rotation='auto')
 num_of_ticks = round(len(filtered_df['position_end_date'].index)/10)
 labels = filtered_df['position_end_date'][::num_of_ticks]
@@ -200,7 +200,7 @@ ax
 # Plot correlation between pool ROIs and position opening date
 filtered_df.sort_values(by=['position_start_date'], inplace=True)
 ax = filtered_df.plot.scatter(figsize=(10,7), x='position_start_date', y='pool_roi', s=5)
-ax.set_title('Scatter position opening dates ' + DATASET_NAME, fontweight='bold', color= 'yellow');
+ax.set_title(DATASET_NAME + ': Scatter position opening dates', fontweight='bold', color= 'yellow');
 ax.tick_params(colors='yellow', which='both', rotation='auto')
 labels = filtered_df['position_start_date'][::num_of_ticks]
 ax.set_xticklabels(labels.dt.date, rotation=30, ha='right')
@@ -212,7 +212,7 @@ ax
 filtered_df['position_duration'] = (filtered_df['position_end_date'] - filtered_df['position_start_date']).dt.days
 filtered_df.sort_values(by=['position_duration'], inplace=True)
 ax = filtered_df.plot.scatter(figsize=(10,7), x='position_duration', y='pool_roi', s=5)
-ax.set_title('Scatter position duration vs pool ROI ' + DATASET_NAME, fontweight='bold', color= 'yellow');
+ax.set_title(DATASET_NAME + ': Scatter position duration vs pool ROI ', fontweight='bold', color= 'yellow');
 ax.tick_params(colors='yellow', which='both', rotation='auto')
 ax.figure.savefig(PLOTS + DATASET_NAME + "-scatter_roi_vs_duration")
 ax
