@@ -35,8 +35,10 @@ pairs["0xf169cea51eb51774cf107c88309717dda20be167"] = "CREAM_WETH"
 # Load position data
 import pandas as pd
 
-FOLDER = "top20-volume-stats/"
-FILE_NAME = FOLDER + "top20-volume-combined.csv"
+DATASET_NAME = "Top20-TVL"
+
+FOLDER = "top20-tvl-stats/"
+FILE_NAME = FOLDER + "top20-tvl-combined.csv"
 PLOTS = FOLDER + "plots/"
 
 df = pd.read_csv(FILE_NAME, parse_dates=["position_end_date", "position_start_date"])
@@ -99,12 +101,12 @@ pool_vs_hodl = df[['market', 'total_roi_vs_hodl_roi']]
 pool_vs_hodl_mean = pool_vs_hodl.groupby(['market']).mean()
 ax = pool_vs_hodl_mean.plot.bar(figsize=(10,7), rot=90)
 
-ax.set_title('Average ROI vs HODL per pool, including rewards', fontweight='bold', color= 'yellow');
+ax.set_title(DATASET_NAME + ': verage ROI vs HODL per pool, including rewards', fontweight='bold', color= 'yellow');
 ax.tick_params(colors='yellow', which='both')
 
 pool_vs_hodl_labels = [pairs[pair_address.get_text()] for pair_address in ax.get_xticklabels()]
 ax.set_xticklabels(pool_vs_hodl_labels, rotation=40, ha='right')
-ax.figure.savefig(PLOTS + "top20tvl-barchart_avg_roi_by_pool")
+ax.figure.savefig(PLOTS + DATASET_NAME + "-barchart_avg_roi_by_pool")
 ax
 
 # %%
