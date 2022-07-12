@@ -21,12 +21,22 @@ pairs["0x117d4288b3635021a3d612fe05a3cbf5c717fef2"] = "SRM_WETH"
 pairs["0x31503dcb60119a812fee820bb7042752019f2355"] = "COMP_WETH"
 pairs["0x055475920a8c93cffb64d039a8205f7acc7722d3"] = "OHM_DAI"
 pairs["0x69b81152c5a8d35a67b32a4d3772795d96cae4da"] = "OHM_WETH"
+pairs["0x559ebe4e206e6b4d50e9bd3008cda7ce640c52cb"] = "RADAR_WETH"
+pairs["0x58dc5a51fe44589beb22e8ce67720b5bc5378009"] = "CRV_WETH"
+pairs["0x611cde65dea90918c0078ac0400a72b0d25b9bb1"] = "REN_WETH"
+pairs["0x613c836df6695c10f0f4900528b6931441ac5d5a"] = "BOND_WETH"
+pairs["0x8b00ee8606cc70c2dce68dea0cefe632cca0fb7b"] = "UST_WETH"
+pairs["0xaf988aff99d3d0cb870812c325c588d8d8cb7de8"] = "KP3R_WETH"
+pairs["0xb5de0c3753b6e1b4dba616db82767f17513e6d4e"] = "SPELL_WETH"
+pairs["0xdab6d56915d36060c8d6cf29a7a84910da614603"] = "METIS_WETH"
+pairs["0xf169cea51eb51774cf107c88309717dda20be167"] = "CREAM_WETH"
+
 
 # Load position data
 import pandas as pd
 
-FOLDER = "top20-tvl-stats/"
-FILE_NAME = FOLDER + "top20-tvl-combined.csv"
+FOLDER = "top20-volume-stats/"
+FILE_NAME = FOLDER + "top20-volume-combined.csv"
 PLOTS = FOLDER + "plots/"
 
 df = pd.read_csv(FILE_NAME, parse_dates=["position_end_date", "position_start_date"])

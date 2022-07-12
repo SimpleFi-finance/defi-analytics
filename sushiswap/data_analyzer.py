@@ -2,10 +2,10 @@
 # Load position data
 import pandas as pd
 
-DATASET_NAME = "TOP20-TVL"
+DATASET_NAME = "TOP20-volume"
 
-FOLDER = "top20-tvl-stats/"
-FILE_NAME = FOLDER + "top20-tvl-combined.csv"
+FOLDER = "top20-volume-stats/"
+FILE_NAME = FOLDER + "top20-volume-combined.csv"
 PLOTS = FOLDER + "plots/"
 
 df = pd.read_csv(FILE_NAME, parse_dates=["position_end_date", "position_start_date"])
@@ -32,7 +32,7 @@ ax = pool_vs_hodl_roi_profitability.plot(
     )
 ax.legend(loc='lower right')
 ax.set_title(DATASET_NAME + ' profitability vs HODL', fontweight='bold', color= 'yellow');
-ax.figure.savefig(PLOTS + "top20tvl-profitability_vs_hodl")
+ax.figure.savefig(PLOTS + DATASET_NAME + "-profitability_vs_hodl")
 ax
 
 
@@ -59,7 +59,7 @@ ax = total_profitability.plot(
     )
 ax.legend(loc='lower right')
 ax.set_title(DATASET_NAME + ' profitability vs HODL including rewards', fontweight='bold', color= 'yellow');
-ax.figure.savefig(PLOTS + "top20tvl-profitability_vs_hodl_with_rewards")
+ax.figure.savefig(PLOTS + DATASET_NAME + "-profitability_vs_hodl_with_rewards")
 ax
 
 
@@ -84,7 +84,7 @@ ax = pool_vs_usd_roi_profitability.plot(
     )
 ax.legend(loc='lower right')
 ax.set_title(DATASET_NAME + ' profitability vs USD', fontweight='bold', color= 'yellow');
-ax.figure.savefig(PLOTS + "top20tvl-profitability_vs_usd")
+ax.figure.savefig(PLOTS + DATASET_NAME + "-profitability_vs_usd")
 ax
 
 # %%
@@ -110,7 +110,7 @@ ax = total_profitability.plot(
     )
 ax.legend(loc='lower right')
 ax.set_title(DATASET_NAME + ' profitability vs USD including rewards', fontweight='bold', color= 'yellow');
-ax.figure.savefig(PLOTS + "top20tvl-profitability_vs_hodl_with_rewards")
+ax.figure.savefig(PLOTS + DATASET_NAME + "-profitability_vs_hodl_with_rewards")
 ax
 
 # %%
@@ -138,7 +138,7 @@ ax = agg_stats.plot(
 )
 ax.set_title('Number of closed positions in ' + DATASET_NAME, fontweight='bold', color= 'yellow');
 ax.tick_params(colors='yellow', which='both', rotation='auto')
-ax.figure.savefig(PLOTS + "top20tvl-profitability_through_periods")
+ax.figure.savefig(PLOTS + DATASET_NAME + "-profitability_through_periods")
 ax
 
 
@@ -164,7 +164,7 @@ ax = groups.plot(
     )
 ax.legend(loc='lower right')
 ax.set_title(DATASET_NAME + ' performance groups', fontweight='bold', color= 'yellow');
-ax.figure.savefig(PLOTS + "top20tvl-profitability_winners_losers")
+ax.figure.savefig(PLOTS + DATASET_NAME + "-profitability_winners_losers")
 ax
 
 
@@ -181,7 +181,7 @@ pd.set_option('display.float_format', '{:.6f}'.format)
 ax = filtered_df["pool_roi"].plot(figsize=(10,7), kind='hist', bins=100)
 ax.set_title('Distribution of returns for ' + DATASET_NAME, fontweight='bold', color= 'yellow');
 ax.tick_params(colors='yellow', which='both', rotation='auto')
-ax.figure.savefig(PLOTS + "top20tvl-distribution_of_ROI")
+ax.figure.savefig(PLOTS + DATASET_NAME + "-distribution_of_ROI")
 ax
 
 # %%
@@ -193,7 +193,7 @@ ax.tick_params(colors='yellow', which='both', rotation='auto')
 num_of_ticks = round(len(filtered_df['position_end_date'].index)/10)
 labels = filtered_df['position_end_date'][::num_of_ticks]
 ax.set_xticklabels(labels.dt.date, rotation=30, ha='right')
-ax.figure.savefig(PLOTS + "top20tvl-scatter_roi_vs_closing")
+ax.figure.savefig(PLOTS + DATASET_NAME + "-scatter_roi_vs_closing")
 ax
 
 # %%
@@ -204,7 +204,7 @@ ax.set_title('Scatter position opening dates ' + DATASET_NAME, fontweight='bold'
 ax.tick_params(colors='yellow', which='both', rotation='auto')
 labels = filtered_df['position_start_date'][::num_of_ticks]
 ax.set_xticklabels(labels.dt.date, rotation=30, ha='right')
-ax.figure.savefig(PLOTS + "top20tvl-scatter_roi_vs_opening")
+ax.figure.savefig(PLOTS + DATASET_NAME + "-scatter_roi_vs_opening")
 ax
 
 # %%
@@ -214,7 +214,7 @@ filtered_df.sort_values(by=['position_duration'], inplace=True)
 ax = filtered_df.plot.scatter(figsize=(10,7), x='position_duration', y='pool_roi', s=5)
 ax.set_title('Scatter position duration vs pool ROI ' + DATASET_NAME, fontweight='bold', color= 'yellow');
 ax.tick_params(colors='yellow', which='both', rotation='auto')
-ax.figure.savefig(PLOTS + "top20tvl-scatter_roi_vs_duration")
+ax.figure.savefig(PLOTS + DATASET_NAME + "-scatter_roi_vs_duration")
 ax
 
 # %%
