@@ -30,15 +30,18 @@ pairs["0xaf988aff99d3d0cb870812c325c588d8d8cb7de8"] = "KP3R_WETH"
 pairs["0xb5de0c3753b6e1b4dba616db82767f17513e6d4e"] = "SPELL_WETH"
 pairs["0xdab6d56915d36060c8d6cf29a7a84910da614603"] = "METIS_WETH"
 pairs["0xf169cea51eb51774cf107c88309717dda20be167"] = "CREAM_WETH"
-
+pairs["0x05767d9ef41dc40689678ffca0608878fb3de906"] = "CVX_WETH"
+pairs["0xa1d7b2d891e3a1f9ef4bbc5be20630c2feb1c470"] = "SNX_WETH"
+pairs["0xba13afecda9beb75de5c56bbaf696b880a5a50dd"] = "MKR_WETH"
+pairs["0xdafd66636e2561b0284edde37e42d192f2844d40"] = "UNI_WETH"
 
 # Load position data
 import pandas as pd
 
-DATASET_NAME = "Top20-TVL"
+DATASET_NAME = "top20-volume"
 
-FOLDER = "top20-tvl-stats/"
-FILE_NAME = FOLDER + "top20-tvl-combined.csv"
+FOLDER = "top20-volume-stats/"
+FILE_NAME = FOLDER + "top20-volume-combined.csv"
 PLOTS = FOLDER + "plots/"
 
 df = pd.read_csv(FILE_NAME, parse_dates=["position_end_date", "position_start_date"])
@@ -101,7 +104,7 @@ pool_vs_hodl = df[['market', 'total_roi_vs_hodl_roi']]
 pool_vs_hodl_mean = pool_vs_hodl.groupby(['market']).mean()
 ax = pool_vs_hodl_mean.plot.bar(figsize=(10,7), rot=90)
 
-ax.set_title(DATASET_NAME + ': verage ROI vs HODL per pool, including rewards', fontweight='bold', color= 'yellow');
+ax.set_title('Average ROI vs HODL per pool, including rewards', fontweight='bold', color= 'yellow');
 ax.tick_params(colors='yellow', which='both')
 
 pool_vs_hodl_labels = [pairs[pair_address.get_text()] for pair_address in ax.get_xticklabels()]
