@@ -19,15 +19,17 @@ pairs["0x99b42f2b49c395d2a77d973f6009abb5d67da343"] = "YGG_WETH"
 pairs["0xdb06a76733528761eda47d356647297bc35a98bd"] = "JPEG_WETH"
 pairs["0x117d4288b3635021a3d612fe05a3cbf5c717fef2"] = "SRM_WETH"
 pairs["0x31503dcb60119a812fee820bb7042752019f2355"] = "COMP_WETH"
+pairs["0x055475920a8c93cffb64d039a8205f7acc7722d3"] = "OHM_DAI"
+pairs["0x69b81152c5a8d35a67b32a4d3772795d96cae4da"] = "OHM_WETH"
 
 # Load position data
 import pandas as pd
 
-FILE_NAME = "combined.csv"
+FOLDER = "top20-tvl-stats/"
+FILE_NAME = FOLDER + "top20-tvl-combined.csv"
+PLOTS = FOLDER + "plots/"
 
-df = pd.read_csv("stats/" + FILE_NAME, parse_dates=["position_end_date", "position_start_date"])
-df = df[df["position_investment_value"] > 100]
-df = df[df["position_redemption_value"] > 100] 
+df = pd.read_csv(FILE_NAME, parse_dates=["position_end_date", "position_start_date"])
 
 df.head(10)
 
@@ -56,7 +58,7 @@ ax
 # %%
 # Plot ratio of profitable/non-profitable positions, including rewards, compared to HODL
 
-df['total_roi'] = df['pool_net_gain'] + df['claimed_rewards_in_USD']
+df['total_gain'] = df['pool_net_gain'] + df['claimed_rewards_in_USD']
 df['total_roi_vs_hodl_roi'] = df['pool_vs_hodl_roi'] + df['claimed_rewards_in_USD']/df['position_redemption_value_if_held']
 
 total_profitability = df['total_roi_vs_hodl_roi'].agg(
@@ -65,6 +67,7 @@ total_profitability = df['total_roi_vs_hodl_roi'].agg(
 )
 
 ax = total_profitability.plot(
+    figsize=(10,7),
     kind='pie',
     legend=True,
     labeldistance=None,
@@ -82,15 +85,16 @@ ax
 # %%
 # Plot bar chart of mean pool_vs_hodl_roi per pool
 pd.set_option('display.float_format', '{:.2f}'.format)
-pool_vs_hodl = df[['market', 'pool_vs_hodl_roi']]
+pool_vs_hodl = df[['market', 'total_roi_vs_hodl_roi']]
 pool_vs_hodl_mean = pool_vs_hodl.groupby(['market']).mean()
-ax = pool_vs_hodl_mean.plot.bar(rot=90)
+ax = pool_vs_hodl_mean.plot.bar(figsize=(10,7), rot=90)
 
-ax.set_title('Average pool_vs_hodl_roi per pool', fontweight='bold', color= 'yellow');
+ax.set_title('Average ROI vs HODL per pool, including rewards', fontweight='bold', color= 'yellow');
 ax.tick_params(colors='yellow', which='both')
 
 pool_vs_hodl_labels = [pairs[pair_address.get_text()] for pair_address in ax.get_xticklabels()]
-ax.set_xticklabels(pool_vs_hodl_labels, rotation=60, ha='right')
+ax.set_xticklabels(pool_vs_hodl_labels, rotation=40, ha='right')
+ax.figure.savefig(PLOTS + "top20tvl-barchart_avg_roi_by_pool")
 ax
 
 # %%
@@ -106,5 +110,3 @@ net_gain_labels = [pairs[pair_address.get_text()] for pair_address in ax.get_xti
 ax.set_xticklabels(net_gain_labels, rotation=60, ha='right')
 ax
 
-
-# %%
