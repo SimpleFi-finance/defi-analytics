@@ -133,18 +133,16 @@ ax
 # Plot winners, losers and inbetweeners
 df['time_ranges'] = df['position_end_block'].apply(lambda x: get_h_for_block(x)).sort_values()
 df['profitability_group'] = df['total_roi_vs_hodl'].apply(
-    lambda x: 'winner' if x > 1 else ('loser' if x < -0.7 else 'inbetweener'))
+    lambda x: 'winner' if x > 1 else ('loser' if x < -0.6 else 'inbetweener'))
 
 groups = df.groupby('profitability_group')['profitability_group'].count()
-
-# agg_stats = df.groupby('time_ranges')['is_profitable'].agg(Total='count', Profitable='sum')
 
 ax = groups.plot(
     kind='pie',
     legend=True,
     labeldistance=None,
     ylabel='',
-    labels=['inbetween', 'ROI < -70%', 'ROI > 100%'],
+    labels=['inbetween', 'ROI < -60%', 'ROI > 100%'],
     autopct='%1.1f%%',
     explode=[0.05, 0.05, 0.05],
     colors = ['pink', 'red', 'green'],
@@ -191,6 +189,14 @@ labels = filtered_df['position_start_date'][::num_of_ticks]
 ax.set_xticklabels(labels.dt.date, rotation=30, ha='right')
 ax
 
+# %%
+# Plot correlation between pool ROIs and position_duration
+filtered_df['position_duration'] = (filtered_df['position_end_date'] - filtered_df['position_start_date']).dt.days
+filtered_df.sort_values(by=['position_duration'], inplace=True)
+ax = filtered_df.plot.scatter(x='position_duration', y='pool_roi', s=5)
+ax.set_title('Scatter position duration vs pool ROI ' + DATASET_NAME, fontweight='bold', color= 'yellow');
+ax.tick_params(colors='yellow', which='both', rotation='auto')
+ax
 
 # %%
 # Get top 20 most profitable accounts
