@@ -129,7 +129,7 @@ def get_h_for_block(block):
         return '2022 H1'
 
 df['time_ranges'] = df['position_end_block'].apply(lambda x: get_h_for_block(x)).sort_values()
-df['is_profitable'] = df['pool_vs_hodl_roi'].apply(lambda x: 1 if x > 0 else 0)
+df['is_profitable'] = df['total_roi_vs_hodl'].apply(lambda x: 1 if x > 0 else 0)
 
 agg_stats = df.groupby('time_ranges')['is_profitable'].agg(Total='count', Profitable='sum')
 ax = agg_stats.plot(
