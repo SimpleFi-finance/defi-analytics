@@ -132,7 +132,7 @@ def collect_top_20_by_tvl():
 
     for p in protocols:
         print("\nCollecting data for " + p + "...")
-        filename = "top20-tvl-stats/" + p + ".csv"
+        filename = "stats/top20-tvl-stats/" + p + ".csv"
 
         # if data exists don't collect it again
         if os.path.isfile(filename):
@@ -164,14 +164,13 @@ def collect_top_20_by_trading_volume():
 
     for p in protocols:
         print("\nCollecting data for " + p + "...")
-        filename = "top20-volume-stats/" + p + ".csv"
+        filename = "stats/top20-volume-stats/" + p + ".csv"
 
         # if data exists don't collect it again
         if os.path.isfile(filename):
             continue
 
         collect_data_for(pools[p], filename)
-
 
 def collect_defi_pools():
     protocols = [
@@ -188,14 +187,13 @@ def collect_defi_pools():
 
     for p in protocols:
         print("\nCollecting data for " + p + "...")
-        filename = "defi-pools-stats/" + p + ".csv"
+        filename = "stats/defi-pools-stats/" + p + ".csv"
 
         # if data exists don't collect it again
         if os.path.isfile(filename):
             continue
 
         collect_data_for(pools[p], filename) 
-
 
 def collect_stablecoin_pools():
     protocols = [
@@ -206,7 +204,7 @@ def collect_stablecoin_pools():
 
     for p in protocols:
         print("\nCollecting data for " + p + "...")
-        filename = "stablecoin-pools-stats/" + p + ".csv"
+        filename = "stats/stablecoin-pools-stats/" + p + ".csv"
 
         # if data exists don't collect it again
         if os.path.isfile(filename):
@@ -236,9 +234,9 @@ def main():
     # collect_data_for_punk_weth()
 
     # collect_top_20_by_tvl()
-    # collect_top_20_by_trading_volume()
+    collect_top_20_by_trading_volume()
     collect_defi_pools()
-    # collect_stablecoin_pools()
+    collect_stablecoin_pools()
 
     # collect_data_for_alls()
 

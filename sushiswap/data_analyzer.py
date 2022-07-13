@@ -2,10 +2,10 @@
 # Load position data
 import pandas as pd
 
-DATASET_NAME = "Top-Defi"
+DATASET_NAME = "TOP20-TVL"
 
-FOLDER = "defi-pools-stats/"
-FILE_NAME = FOLDER + "defi-combined.csv"
+FOLDER = "stats/top20-tvl-stats/"
+FILE_NAME = FOLDER + "top20tvl-combined.csv"
 PLOTS = FOLDER + "plots/"
 
 df = pd.read_csv(FILE_NAME, parse_dates=["position_end_date", "position_start_date"])
@@ -215,6 +215,16 @@ ax = filtered_df.plot.scatter(figsize=(10,7), x='position_duration', y='pool_roi
 ax.set_title(DATASET_NAME + ': Scatter position duration vs pool ROI ', fontweight='bold', color= 'yellow');
 ax.tick_params(colors='yellow', which='both', rotation='auto')
 ax.figure.savefig(PLOTS + DATASET_NAME + "-scatter_roi_vs_duration")
+ax
+
+# %%
+# Plot correlation between pool ROIs and position_duration
+filtered_df = filtered_df[filtered_df['position_trade_counter'] < 100]
+filtered_df.sort_values(by=['position_trade_counter'], inplace=True)
+ax = filtered_df.plot.scatter(figsize=(10,7), x='position_trade_counter', y='pool_roi', s=5)
+ax.set_title(DATASET_NAME + ': Scatter number of trades vs pool ROI ', fontweight='bold', color= 'yellow');
+ax.tick_params(colors='yellow', which='both', rotation='auto')
+ax.figure.savefig(PLOTS + DATASET_NAME + "-scatter_roi_vs_num_of_trades")
 ax
 
 # %%

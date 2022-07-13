@@ -272,7 +272,8 @@ class PositionHandler:
                 'pool_roi': pool_roi,
                 'hodl_roi': hodl_roi,
                 'pool_vs_hodl_roi': pool_vs_hodl_roi,
-                'claimed_rewards_in_USD': claimed_rewards_in_USD
+                'claimed_rewards_in_USD': claimed_rewards_in_USD,
+                'position_trade_counter': len(txs)
             }
 
             if(len(position_stats.keys()) % 10 == 0):
@@ -379,7 +380,8 @@ class PositionHandler:
                 'pool_roi': pool_roi,
                 'hodl_roi': hodl_roi,
                 'pool_vs_hodl_roi': pool_vs_hodl_roi,
-                'claimed_rewards_in_USD': claimed_rewards_in_USD
+                'claimed_rewards_in_USD': claimed_rewards_in_USD,
+                'position_trade_counter': len(txs)
             }
 
             if(len(position_stats.keys()) % 10 == 0):
@@ -412,7 +414,8 @@ class PositionHandler:
                 'pool_roi',
                 'hodl_roi',
                 'pool_vs_hodl_roi',
-                'claimed_rewards_in_USD'
+                'claimed_rewards_in_USD',
+                'position_trade_counter'
         ])
         writer.writeheader()
 
